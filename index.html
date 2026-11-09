@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#991b35">
+  <title>VeinToVein | Blood Donation Network</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#" aria-label="VeinToVein home">
+        <span class="brand-mark">V<span>+</span></span>
+        <span><strong>VeinToVein</strong><small>Blood connects us</small></span>
+      </a>
+      <div class="side-label">WORKSPACE</div>
+      <nav class="side-nav">
+        <a class="nav-link active" href="#overview" data-view="overview"><span>▦</span> Overview</a>
+        <a class="nav-link" href="#find-donors" data-view="find-donors"><span>⌕</span> Find donors</a>
+        <a class="nav-link" href="#urgent-requests" data-view="urgent-requests"><span>♡</span> Blood requests <b class="nav-count" id="requestCount">3</b></a>
+        <a class="nav-link" href="#my-profile" data-view="my-profile"><span>♙</span> My donor profile</a>
+      </nav>
+      <div class="side-label side-label-lower">PREFERENCES</div>
+      <nav class="side-nav">
+        <a class="nav-link" href="#notifications" data-view="notifications"><span>♧</span> Notifications <b class="dot"></b></a>
+        <a class="nav-link" href="#eligibility" data-view="eligibility"><span>✓</span> Eligibility guide</a>
+      </nav>
+      <div class="sidebar-help">
+        <div class="help-icon">✚</div>
+        <strong>Every drop matters.</strong>
+        <p>Your small act can make a life-changing difference.</p>
+        <a href="#find-donors" data-view="find-donors">Explore network →</a>
+      </div>
+      <div class="sidebar-user">
+        <div class="avatar">AS</div><div><strong id="sideUserName">Aarav Sharma</strong><small>Demo donor account</small></div>
+        <span class="more">•••</span>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <button class="menu-btn" id="menuBtn" aria-label="Toggle menu">☰</button>
+        <div class="breadcrumb">Workspace <span>/</span> <strong id="pageName">Overview</strong></div>
+        <div class="top-actions">
+          <span class="location-pill">⌖ <span id="locationLabel">Bengaluru, KA</span></span>
+          <button class="icon-btn" id="notificationBell" aria-label="Notifications">♧<i></i></button>
+          <div class="top-avatar" id="topAvatar">AS</div>
+        </div>
+      </header>
+
+      <section class="page-view active" id="overview">
+        <div class="welcome-row">
+          <div><p class="eyebrow">MONDAY, NOVEMBER 9, 2026</p><h1>Good morning, <span id="welcomeName">Aarav</span> <span class="wave">✦</span></h1><p class="muted">Your community is stronger because of people like you.</p></div>
+          <button class="primary-btn" data-open-modal="requestModal">＋ Create blood request</button>
+        </div>
+        <div class="hero-card">
+          <div class="hero-copy"><span class="hero-tag"><span class="pulse"></span> COMMUNITY IMPACT</span><h2>One donation.<br><em>Many more tomorrows.</em></h2><p>Connect with nearby donors and help hospitals find the right blood type when every second counts.</p><button class="light-btn" data-view="find-donors">Find a donor <span>→</span></button></div>
+          <div class="hero-art" aria-hidden="true"><div class="art-ring ring-one"></div><div class="art-ring ring-two"></div><div class="blood-drop">♥</div><div class="art-caption">GIVE BLOOD<br><b>GIVE HOPE</b></div></div>
+        </div>
+        <div class="stats-grid">
+          <article class="stat-card"><div class="stat-top"><span>Active donors nearby</span><span class="stat-icon red">♙</span></div><strong id="donorStat">1,284</strong><small><b class="positive">↑ 12%</b> this month</small></article>
+          <article class="stat-card"><div class="stat-top"><span>Urgent requests</span><span class="stat-icon orange">♡</span></div><strong id="urgentStat">08</strong><small>Across your local network</small></article>
+          <article class="stat-card"><div class="stat-top"><span>Lives supported</span><span class="stat-icon green">✚</span></div><strong>3,642</strong><small><b class="positive">↑ 8%</b> this month</small></article>
+          <article class="stat-card"><div class="stat-top"><span>Your donations</span><span class="stat-icon purple">✦</span></div><strong id="donationStat">02</strong><small>Thank you for giving</small></article>
+        </div>
+        <div class="content-grid">
+          <section class="panel requests-panel"><div class="section-heading"><div><p class="eyebrow">NEEDS YOUR ATTENTION</p><h3>Urgent blood requests</h3></div><a href="#urgent-requests" data-view="urgent-requests">View all →</a></div><div id="overviewRequests" class="request-list"></div></section>
+          <section class="panel profile-panel"><div class="section-heading"><div><p class="eyebrow">YOUR CONTRIBUTION</p><h3>Donor snapshot</h3></div><span class="verified-tag">● Demo profile</span></div><div class="profile-summary"><div class="blood-type">O<sup>+</sup></div><div><strong id="profileName">Aarav Sharma</strong><p>Blood group · <b id="profileBlood">O Positive</b></p><span class="availability"><i></i><span id="availabilityText">Available to donate</span></span></div></div><div class="profile-progress"><div><span>Profile completion</span><b id="completionText">75%</b></div><div class="progress-track"><span id="completionBar" style="width:75%"></span></div></div><button class="outline-btn full-btn" data-view="my-profile">View donor profile →</button></section>
+        </div>
+        <div class="bottom-note"><span>✚</span><div><strong>Important health reminder</strong><p>Donation eligibility depends on a health assessment by qualified medical staff. This website is a student demo, not a medical screening tool.</p></div></div>
+      </section>
+
+      <section class="page-view" id="find-donors">
+        <div class="page-title-row"><div><p class="eyebrow">LOCAL DONOR DIRECTORY</p><h1>Find a blood donor</h1><p class="muted">Search the demo directory by blood group and location.</p></div></div>
+        <div class="panel search-panel"><div class="search-fields"><label>Blood group<select id="bloodFilter"><option value="All">All blood groups</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></label><label>Area / city<input id="areaFilter" type="text" placeholder="e.g. Indiranagar"></label><label>Availability<select id="availabilityFilter"><option value="All">Any availability</option><option value="Available">Available</option><option value="Unavailable">Unavailable</option></select></label><button class="primary-btn" id="searchBtn">Search donors</button></div><p class="privacy-hint">🔒 Demo directory only. Real donor contact details should only be shared with consent.</p></div>
+        <div class="directory-heading"><h3>Nearby donors <span id="resultCount">6</span></h3><span class="muted small">Sample data · Bengaluru</span></div>
+        <div class="donor-grid" id="donorGrid"></div>
+      </section>
+
+      <section class="page-view" id="urgent-requests">
+        <div class="page-title-row"><div><p class="eyebrow">HOSPITAL & COMMUNITY NEEDS</p><h1>Blood requests</h1><p class="muted">Review urgent requests and register a demo response.</p></div><button class="primary-btn" data-open-modal="requestModal">＋ New request</button></div>
+        <div class="filter-chips"><button class="chip active" data-priority="All">All requests</button><button class="chip" data-priority="Critical">Critical</button><button class="chip" data-priority="Urgent">Urgent</button><button class="chip" data-priority="Normal">Normal</button></div>
+        <div class="request-list request-list-large" id="allRequests"></div>
+      </section>
+
+      <section class="page-view" id="my-profile">
+        <div class="page-title-row"><div><p class="eyebrow">DONOR ACCOUNT</p><h1>My donor profile</h1><p class="muted">Manage your demo profile and donation history.</p></div><button class="outline-btn" id="editProfileBtn">✎ Edit profile</button></div>
+        <div class="profile-layout"><div class="panel profile-main"><div class="profile-cover"></div><div class="profile-main-body"><div class="large-avatar" id="largeAvatar">AS</div><h2 id="fullName">Aarav Sharma</h2><p class="muted" id="profileCity">Bengaluru, Karnataka</p><span class="verified-tag">● Demo account</span><div class="detail-grid"><div><small>Blood group</small><strong id="detailBlood">O+</strong></div><div><small>Age</small><strong id="detailAge">22 years</strong></div><div><small>Last donation</small><strong id="detailLast">12 Aug 2026</strong></div><div><small>Phone</small><strong id="detailPhone">Not shared</strong></div></div><div class="availability-toggle"><div><strong>Available for donation</strong><p class="muted small">This is a demo status, not eligibility clearance.</p></div><label class="switch"><input type="checkbox" id="availableToggle" checked><span></span></label></div></div></div>
+          <div class="profile-side"><div class="panel"><div class="section-heading"><h3>Donation history</h3><span class="muted small">Demo records</span></div><div id="historyList" class="history-list"></div><button class="outline-btn full-btn" id="addHistoryBtn">＋ Add demo history entry</button></div><div class="panel eligibility-mini"><div class="stat-icon green">✓</div><h3>Eligibility information</h3><p class="muted small">Your actual eligibility must be assessed by a blood bank or qualified healthcare professional.</p><button class="text-btn" data-view="eligibility">Read eligibility guide →</button></div></div></div>
+      </section>
+
+      <section class="page-view" id="notifications">
+        <div class="page-title-row"><div><p class="eyebrow">STAY IN THE LOOP</p><h1>Notifications</h1><p class="muted">Urgent requests and updates from your demo network.</p></div><button class="outline-btn" id="enablePushBtn">♧ Enable browser alerts</button></div>
+        <div class="panel notification-panel"><div class="section-heading"><h3>Recent activity</h3><button class="text-btn" id="clearNotifications">Clear all</button></div><div id="notificationList"></div></div>
+        <div class="bottom-note"><span>🔔</span><div><strong>About notifications</strong><p>This frontend can request browser notification permission while the page is open. True background push notifications require a backend and push service.</p></div></div>
+      </section>
+
+      <section class="page-view" id="eligibility">
+        <div class="page-title-row"><div><p class="eyebrow">DONOR WELLNESS</p><h1>Eligibility guide</h1><p class="muted">General information to help you prepare before contacting a blood bank.</p></div></div>
+        <div class="eligibility-grid"><article class="panel"><div class="guide-icon green">✓</div><h3>Before you donate</h3><ul><li>Carry valid identification and answer the screening questions honestly.</li><li>Have a meal and stay well hydrated, following the blood bank's instructions.</li><li>Tell staff about medicines, recent illness, travel and medical history.</li><li>Follow the blood bank's advice on donation intervals.</li></ul></article><article class="panel"><div class="guide-icon orange">!</div><h3>Important to know</h3><ul><li>Age, weight, haemoglobin, health conditions and other criteria may affect eligibility.</li><li>Eligibility rules vary by country and blood bank.</li><li>Do not donate if you feel unwell; contact a qualified professional.</li><li>Only trained staff can confirm whether you can donate today.</li></ul></article></div>
+        <div class="bottom-note"><span>⚕</span><div><strong>Medical disclaimer</strong><p>VeinToVein is a student project prototype. This checklist is not a diagnosis, medical advice, or eligibility verification. Do not use it to decide whether to donate.</p></div></div>
+      </section>
+      <footer>© 2026 VeinToVein · Student project prototype <span>Built to bring help closer.</span></footer>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="requestModal"><div class="modal"><div class="modal-head"><div><p class="eyebrow">COMMUNITY SUPPORT</p><h2>Create blood request</h2></div><button class="close-btn" data-close-modal>×</button></div><form id="requestForm"><label>Hospital / requester name<input name="hospital" required placeholder="e.g. City Care Hospital"></label><div class="form-row"><label>Blood group<select name="blood" required><option value="">Select group</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></label><label>Units needed<input name="units" type="number" min="1" max="20" value="2" required></label></div><div class="form-row"><label>Area<input name="area" required placeholder="e.g. Jayanagar"></label><label>Priority<select name="priority"><option>Urgent</option><option>Critical</option><option>Normal</option></select></label></div><label>Contact number<input name="contact" type="tel" placeholder="Hospital contact (demo)"></label><p class="form-disclaimer">Demo only: do not enter real patient information or sensitive medical details.</p><button class="primary-btn full-btn" type="submit">Publish demo request</button></form></div></div>
+
+  <div class="modal-backdrop" id="profileModal"><div class="modal"><div class="modal-head"><div><p class="eyebrow">YOUR DETAILS</p><h2>Edit donor profile</h2></div><button class="close-btn" data-close-modal>×</button></div><form id="profileForm"><label>Full name<input name="name" required></label><div class="form-row"><label>Blood group<select name="blood"><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></label><label>Age<input name="age" type="number" min="18" max="100"></label></div><label>City<input name="city"></label><label>Phone (optional)<input name="phone" type="tel" placeholder="Not shared"></label><button class="primary-btn full-btn" type="submit">Save profile</button></form></div></div>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="script.js"></script>
+</body>
+</html>
