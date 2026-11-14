@@ -443,6 +443,32 @@ document.addEventListener('click', (e) => {
       list.unshift(newDispatch);
       localStorage.setItem('veintovein_dispatches', JSON.stringify(list));
       window.dispatchEvent(new CustomEvent('veintovein_dispatch_updated'));
+
+      // Also persist donor acceptance into Supabase tables
+      const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+      if (sb && currentDonorProfile && currentDonorProfile.id) {
+        // 1. Insert into public.donations
+        sb.from('donations').insert({
+          donor_id: currentDonorProfile.id,
+          centre: hospName,
+          component: 'Whole Blood · 350 ml',
+          status: 'En Route',
+          donated_at: new Date().toISOString().split('T')[0]
+        }).then(({ data, error }) => {
+          if (error) console.warn('[VeinToVein] Supabase donations insert notice:', error);
+          else console.log('[VeinToVein] Requisition acceptance saved to Supabase donations table.');
+        });
+
+        // 2. Insert into public.request_responses
+        sb.from('request_responses').insert({
+          donor_id: currentDonorProfile.id,
+          request_id: '8d296ce1-36d7-4161-b0f0-f91455686bde',
+          accepted_at: new Date().toISOString()
+        }).then(({ data, error }) => {
+          if (error) console.warn('[VeinToVein] Supabase request_responses notice:', error);
+          else console.log('[VeinToVein] Accepted response saved to Supabase request_responses table.');
+        });
+      }
     } catch (err) {
       console.warn('Dispatch save error:', err);
     }

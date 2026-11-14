@@ -395,7 +395,23 @@ document.getElementById('finalizeDonationForm')?.addEventListener('submit', asyn
           })
           .eq('id', dbUser.id);
 
-        console.log('[VeinToVein] Supabase profiles table updated for donor:', dbUser.email);
+        // Also record completed donation in Supabase public.donations table
+        const { error: donErr } = await sb
+          .from('donations')
+          .insert({
+            donor_id: dbUser.id,
+            centre: hospitalName,
+            component: component,
+            hb: parseFloat(hb) || 14.2,
+            status: 'Completed',
+            donated_at: todayStr
+          });
+
+        if (donErr) {
+          console.warn('[VeinToVein] Supabase donations table insert notice:', donErr);
+        } else {
+          console.log('[VeinToVein] Donation successfully inserted into Supabase donations table for:', dbUser.email);
+        }
       }
     }
 
