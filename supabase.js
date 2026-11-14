@@ -727,6 +727,14 @@ async function signInDonor({ email, password }) {
       };
     }
 
+    // Ensure password column is kept up-to-date in public.profiles table
+    if (password && data?.user?.id) {
+      sb.from('profiles')
+        .update({ password: password })
+        .eq('id', data.user.id)
+        .then(() => {});
+    }
+
     localStorage.setItem('vtv_donor_profile', JSON.stringify(profile));
   }
 
