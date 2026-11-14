@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#160b0d">
+  <title>Sign In & Register | VeinToVein Blood Network</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;0,9..144,800;0,9..144,900;1,9..144,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Auth Page Custom Styles */
+    .auth-section {
+      min-height: calc(100vh - 72px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 100px 1rem 60px;
+      background: radial-gradient(circle at 10% 20%, rgba(193, 18, 31, 0.08) 0%, transparent 40%),
+                  radial-gradient(circle at 90% 80%, rgba(233, 180, 76, 0.06) 0%, transparent 40%),
+                  var(--paper);
+    }
+    .auth-card {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 30px 80px rgba(23, 16, 14, 0.12);
+      padding: 2.2rem 2.4rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .auth-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--crimson-bright), var(--gold), var(--crimson));
+    }
+    .auth-header {
+      text-align: center;
+      margin-bottom: 1.8rem;
+    }
+    .auth-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+      background: rgba(193, 18, 31, 0.08);
+      color: var(--crimson);
+      margin-bottom: 0.8rem;
+    }
+    .auth-title {
+      font-family: 'Fraunces', serif;
+      font-size: 1.75rem;
+      color: var(--ink);
+      line-height: 1.2;
+    }
+    .auth-subtitle {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 0.4rem;
+    }
+    /* Tab Switcher */
+    .auth-tabs {
+      display: flex;
+      background: #f5eee6;
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 1.6rem;
+      gap: 4px;
+    }
+    .auth-tab-btn {
+      flex: 1;
+      padding: 0.65rem 0.8rem;
+      border-radius: 9px;
+      border: none;
+      background: transparent;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .auth-tab-btn.active {
+      background: #ffffff;
+      color: var(--ink);
+      box-shadow: 0 4px 12px rgba(23, 16, 14, 0.08);
+    }
+    /* Password field with toggle */
+    .password-wrap {
+      position: relative;
+    }
+    .password-wrap input {
+      padding-right: 2.8rem;
+    }
+    .pwd-toggle {
+      position: absolute;
+      right: 0.8rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pwd-toggle:hover {
+      color: var(--ink);
+    }
+    /* Alert Banners */
+    .auth-alert {
+      display: none;
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      margin-bottom: 1.2rem;
+      line-height: 1.45;
+    }
+    .auth-alert.error {
+      display: block;
+      background: #fff1f0;
+      border: 1px solid #ffccc7;
+      color: #cf1322;
+    }
+    .auth-alert.success {
+      display: block;
+      background: #f6ffed;
+      border: 1px solid #b7eb8f;
+      color: #389e0d;
+    }
+    .auth-alert.info {
+      display: block;
+      background: #e6f7ff;
+      border: 1px solid #91d5ff;
+      color: #096dd9;
+    }
+    /* Form styles */
+    .auth-form {
+      display: none;
+    }
+    .auth-form.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: none; }
+    }
+    .auth-links {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1.2rem;
+      font-size: 0.78rem;
+    }
+    .auth-links a {
+      color: var(--crimson);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .auth-links a:hover {
+      text-decoration: underline;
+    }
+    /* Already signed in state */
+    .logged-in-panel {
+      display: none;
+      text-align: center;
+      padding: 1rem 0;
+    }
+    .logged-in-panel.show {
+      display: block;
+    }
+    .user-avatar-badge {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--crimson), var(--crimson-deep));
+      color: #fff;
+      font-family: 'Fraunces', serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+      box-shadow: 0 10px 24px rgba(193, 18, 31, 0.3);
+    }
+    /* Spinner for button */
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+      margin-right: 6px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    /* Custom User Nav Chip */
+    .user-nav-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(23, 16, 14, 0.05);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 3px 6px 3px 4px;
+    }
+    .user-chip-link {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      text-decoration: none;
+      color: var(--ink);
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .user-avatar-mini {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--crimson);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .user-name-mini {
+      max-width: 90px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .btn-logout {
+      border: none;
+      background: transparent;
+      padding: 4px 8px;
+      cursor: pointer;
+      color: var(--muted);
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .btn-logout:hover {
+      background: rgba(193, 18, 31, 0.1);
+      color: var(--crimson);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════ NAVIGATION ══════════ -->
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a class="logo" href="index.html#home" aria-label="VeinToVein home">
+      <svg class="logo-mark" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <path d="M24 2C18.6 13.4 8.5 19.6 8.5 30a15.5 15.5 0 0 0 31 0C39.5 19.6 29.4 13.4 24 2Z" fill="url(#lg1)"/>
+        <path d="M14 30h6l2.4-7 3.4 11 2.8-8.6 2 4.6h3.4" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+        <defs><linearGradient id="lg1" x1="8" y1="2" x2="40" y2="46"><stop stop-color="#e5383b"/><stop offset="1" stop-color="#7f0d1a"/></linearGradient></defs>
+      </svg>
+      <span class="logo-text">Vein<b>To</b>Vein<small>BLOOD · NETWORK</small></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html#requests">Live Requests</a></li>
+      <li><a href="index.html#compatibility">Compatibility</a></li>
+      <li><a href="index.html#eligibility">Eligibility</a></li>
+      <li><a href="profile.html">My Profile</a></li>
+      <li><a href="admin.html" style="color:var(--crimson);font-weight:700;">Admin Desk ↗</a></li>
+      <li><a href="index.html#faq">FAQ</a></li>
+    </ul>
+    <div class="nav-actions">
+      <div id="navAuthBtn">
+        <a href="auth.html?mode=signin" class="btn btn-ghost btn-sm">Sign In</a>
+        <a href="auth.html?mode=signup" class="btn btn-primary btn-sm">Join as Donor</a>
+      </div>
+      <button class="hamburger" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="index.html#requests">Live Requests</a>
+  <a href="index.html#compatibility">Compatibility Chart</a>
+  <a href="index.html#eligibility">Eligibility Checker</a>
+  <a href="profile.html">My Profile</a>
+  <a href="index.html#faq">FAQ</a>
+</div>
+
+<!-- ══════════ AUTH SECTION ══════════ -->
+<main class="auth-section">
+  <div class="auth-card">
+    
+    <!-- State: Already Logged In -->
+    <div class="logged-in-panel" id="alreadyLoggedInPanel">
+      <div class="user-avatar-badge" id="badgeAvatar">VT</div>
+      <h3 class="auth-title" id="badgeName">Welcome Back</h3>
+      <p class="auth-subtitle" id="badgeEmail">user@example.com</p>
+      <div style="background:#f9f6f0;border:1px solid var(--line);border-radius:14px;padding:1rem;margin:1.4rem 0;text-align:left;">
+        <div style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;font-weight:700;">Donor Profile Active</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.4rem;">
+          <span style="font-size:0.85rem;color:var(--ink);">Donor ID: <b id="badgeDonorId">VT-IN-2025-XXXXX</b></span>
+          <span class="tag-mini tag-gold" id="badgeBloodGroup" style="background:#fff3d6;color:#925400;font-weight:700;padding:2px 8px;border-radius:6px;">O+</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.8rem;flex-direction:column;">
+        <a href="profile.html" class="btn btn-primary btn-block">Go to My Donor Profile &rarr;</a>
+        <button class="btn btn-ghost btn-block" id="panelSignOutBtn">Sign Out of This Account</button>
+      </div>
+    </div>
+
+    <!-- State: Authentication Forms -->
+    <div id="authFormsContainer">
+      <div class="auth-header">
+        <span class="auth-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/></svg>
+          Supabase Secured · DPDP Compliant
+        </span>
+        <h2 class="auth-title" id="formHeaderTitle">Sign In to VeinToVein</h2>
+        <p class="auth-subtitle" id="formHeaderSubtitle">Access your verified donor passport and real-time emergency feed</p>
+      </div>
+
+      <!-- Tab Switcher -->
+      <div class="auth-tabs" role="tablist">
+        <button type="button" class="auth-tab-btn active" id="tabBtnSignIn" role="tab" aria-selected="true">Sign In</button>
+        <button type="button" class="auth-tab-btn" id="tabBtnSignUp" role="tab" aria-selected="false">Create Account</button>
+      </div>
+
+      <!-- Global Alert Container -->
+      <div class="auth-alert" id="authAlert" role="alert"></div>
+
+      <!-- ────── SIGN IN FORM ────── -->
+      <form class="auth-form active" id="signInForm" novalidate>
+        <div class="field full" style="margin-bottom:1rem">
+          <label for="loginEmail">Email Address</label>
+          <input type="email" id="loginEmail" placeholder="your.name@example.com" required autocomplete="email">
+        </div>
+        <div class="field full" style="margin-bottom:1.4rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">
+            <label for="loginPassword" style="margin-bottom:0">Password</label>
+            <a href="#" id="forgotPwdLink" style="font-size:0.72rem;color:var(--crimson);text-decoration:none;font-weight:600;">Forgot?</a>
+          </div>
+          <div class="password-wrap">
+            <input type="password" id="loginPassword" placeholder="Enter your password" required autocomplete="current-password">
+            <button type="button" class="pwd-toggle" data-target="loginPassword" aria-label="Toggle password visibility">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="signInSubmitBtn">
+          <span>Sign In</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <div class="auth-links">
+          <span style="color:var(--muted)">New to VeinToVein?</span>
+          <a href="#" id="switchToSignUp">Register as a Donor &rarr;</a>
+        </div>
+      </form>
+
+      <!-- ────── CREATE ACCOUNT (SIGN UP) FORM ────── -->
+      <form class="auth-form" id="signUpForm" novalidate>
+        <div class="form-grid" style="margin-bottom:1rem">
+          <div class="field full">
+            <label for="regFullName">Full Name</label>
+            <input type="text" id="regFullName" placeholder="As on Aadhaar / Gov ID" required autocomplete="name">
+          </div>
+          <div class="field full">
+            <label for="regEmail">Email Address</label>
+            <input type="email" id="regEmail" placeholder="your.name@example.com" required autocomplete="email">
+          </div>
+          <div class="field full">
+            <label for="regPassword">Create Password</label>
+            <div class="password-wrap">
+              <input type="password" id="regPassword" placeholder="Minimum 6 characters" required minlength="6" autocomplete="new-password">
+              <button type="button" class="pwd-toggle" data-target="regPassword" aria-label="Toggle password visibility">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="regMobile">Mobile Number</label>
+            <input type="tel" id="regMobile" placeholder="+91 98765 43210" pattern="[0-9+\s-]{10,16}" required autocomplete="tel">
+          </div>
+          <div class="field">
+            <label for="regBloodGroup">Blood Group</label>
+            <select id="regBloodGroup" required>
+              <option value="">Select...</option>
+              <option value="O−">O−</option>
+              <option value="O+">O+</option>
+              <option value="A−">A−</option>
+              <option value="A+">A+</option>
+              <option value="B−">B−</option>
+              <option value="B+">B+</option>
+              <option value="AB−">AB−</option>
+              <option value="AB+">AB+</option>
+              <option value="Don't know">Don't know (test me free)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="regCityName">City</label>
+            <input type="text" id="regCityName" placeholder="e.g. Bengaluru, Chennai" required>
+          </div>
+          <div class="field">
+            <label for="regLastDate">Last Donation (Optional)</label>
+            <input type="date" id="regLastDate" max="2026-12-31">
+          </div>
+        </div>
+
+        <label class="consent-row" style="margin-top:0.4rem;margin-bottom:1.2rem;">
+          <input type="checkbox" id="regTerms" required>
+          <span>I consent to VeinToVein storing my blood group, contact, and donation eligibility for life-saving matches. Data is encrypted and managed under the DPDP Act 2023.</span>
+        </label>
+
+        <button type="submit" class="btn btn-primary btn-block" id="signUpSubmitBtn">
+          <span>Create My Secure Profile</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7.5" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
+        </button>
+
+        <div class="auth-links">
+          <span style="color:var(--muted)">Already registered?</span>
+          <a href="#" id="switchToSignIn">&larr; Sign In here</a>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</main>
+
+<!-- ══════════ FOOTER ══════════ -->
+<footer class="footer">
+  <div class="container">
+    <div class="foot-bottom" style="border-top:none;">
+      <span>&copy; <span id="footerYear">2026</span> VeinToVein Foundation &middot; Registered Section-8 Nonprofit</span>
+      <span class="sys-ok"><i></i>Connected to Supabase &middot; 256-bit AES Encryption</span>
+    </div>
+  </div>
+</footer>
+
+<div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
+
+<!-- Supabase SDK & Integration Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+
+<script>
+'use strict';
+
+// Elements
+const tabBtnSignIn = document.getElementById('tabBtnSignIn');
+const tabBtnSignUp = document.getElementById('tabBtnSignUp');
+const signInForm = document.getElementById('signInForm');
+const signUpForm = document.getElementById('signUpForm');
+const formHeaderTitle = document.getElementById('formHeaderTitle');
+const formHeaderSubtitle = document.getElementById('formHeaderSubtitle');
+const authAlert = document.getElementById('authAlert');
+const authFormsContainer = document.getElementById('authFormsContainer');
+const alreadyLoggedInPanel = document.getElementById('alreadyLoggedInPanel');
+
+// Toast helper
+function showToast(title, message) {
+  const wrap = document.getElementById('toastWrap');
+  if (!wrap) return;
+  const t = document.createElement('div');
+  t.className = 'toast success';
+  t.innerHTML = `<div><b>${title}</b><p>${message}</p></div>`;
+  wrap.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+
+// Alert banner helper
+function showAlert(message, type = 'error') {
+  authAlert.className = `auth-alert ${type}`;
+  authAlert.innerHTML = message;
+  authAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function clearAlert() {
+  authAlert.className = 'auth-alert';
+  authAlert.textContent = '';
+}
+
+// Switch between Sign In and Sign Up tabs
+function setMode(mode) {
+  clearAlert();
+  if (mode === 'signup') {
+    tabBtnSignUp.classList.add('active');
+    tabBtnSignIn.classList.remove('active');
+    signUpForm.classList.add('active');
+    signInForm.classList.remove('active');
+    formHeaderTitle.textContent = 'Join the Blood Network';
+    formHeaderSubtitle.textContent = 'Create your verified donor profile in under 2 minutes';
+    history.replaceState(null, '', '?mode=signup');
+  } else {
+    tabBtnSignIn.classList.add('active');
+    tabBtnSignUp.classList.remove('active');
+    signInForm.classList.add('active');
+    signUpForm.classList.remove('active');
+    formHeaderTitle.textContent = 'Sign In to VeinToVein';
+    formHeaderSubtitle.textContent = 'Access your verified donor passport and real-time emergency feed';
+    history.replaceState(null, '', '?mode=signin');
+  }
+}
+
+tabBtnSignIn.addEventListener('click', () => setMode('signin'));
+tabBtnSignUp.addEventListener('click', () => setMode('signup'));
+document.getElementById('switchToSignUp').addEventListener('click', (e) => { e.preventDefault(); setMode('signup'); });
+document.getElementById('switchToSignIn').addEventListener('click', (e) => { e.preventDefault(); setMode('signin'); });
+
+// Password visibility toggles
+document.querySelectorAll('.pwd-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const input = document.getElementById(btn.dataset.target);
+    if (!input) return;
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    btn.innerHTML = isPassword
+      ? `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+      : `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  });
+});
+
+// Forgot password helper
+document.getElementById('forgotPwdLink')?.addEventListener('click', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  if (!email) {
+    showAlert('Please enter your email address in the field above to reset your password.', 'info');
+    document.getElementById('loginEmail').focus();
+    return;
+  }
+  const sb = getSupabase();
+  if (!sb) return;
+  try {
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + window.location.pathname
+    });
+    if (error) {
+      showAlert(error.message, 'error');
+    } else {
+      showAlert(`Password reset link sent to ${email}. Check your inbox!`, 'success');
+    }
+  } catch (err) {
+    showAlert(err.message, 'error');
+  }
+});
+
+// Check if user is already logged in on page load
+async function checkCurrentAuth() {
+  const current = await getCurrentDonor();
+  if (current && current.profile) {
+    const p = current.profile;
+    authFormsContainer.style.display = 'none';
+    alreadyLoggedInPanel.classList.add('show');
+    document.getElementById('badgeAvatar').textContent = getInitials(p.full_name);
+    document.getElementById('badgeName').textContent = p.full_name || 'Verified Donor';
+    document.getElementById('badgeEmail').textContent = current.user.email || p.email;
+    document.getElementById('badgeDonorId').textContent = p.donor_id || 'VT-IN-2025-ACTIVE';
+    document.getElementById('badgeBloodGroup').textContent = p.blood_group || 'O+';
+  } else {
+    authFormsContainer.style.display = 'block';
+    alreadyLoggedInPanel.classList.remove('show');
+    // Read URL mode
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'signup') {
+      setMode('signup');
+    } else {
+      setMode('signin');
+    }
+  }
+}
+
+// Sign Out from Panel
+document.getElementById('panelSignOutBtn')?.addEventListener('click', async () => {
+  await signOutDonor();
+  showToast('Signed Out', 'You have been safely signed out.');
+  setTimeout(() => window.location.reload(), 600);
+});
+
+// ────────── HANDLE SIGN IN SUBMIT ──────────
+signInForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  clearAlert();
+
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const submitBtn = document.getElementById('signInSubmitBtn');
+
+  if (!email || !password) {
+    showAlert('Please fill in both email and password.');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = `<span class="spinner"></span> Signing in...`;
+
+  try {
+    const { data, error } = await signInDonor({ email, password });
+    if (error) {
+      let msg = error.message;
+      if (msg.toLowerCase().includes('invalid login credentials')) {
+        msg = 'Invalid email or password. Please verify your credentials or create a new account.';
+      } else if (msg.toLowerCase().includes('email not confirmed')) {
+        msg = `
+          <div style="font-weight:700;margin-bottom:4px;">Email Not Confirmed</div>
+          <div>Supabase requires email confirmation before signing in. Check your inbox (or spam) for the confirmation link from Supabase.</div>
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <button type="button" id="resendConfirmBtn" class="btn btn-ghost btn-sm" style="font-size:0.75rem;padding:5px 12px;background:#fff;border-color:var(--crimson);color:var(--crimson);">
+              Resend Confirmation Email
+            </button>
+            <span style="font-size:0.72rem;color:var(--muted);">(Or disable "Confirm email" in Supabase Auth settings)</span>
+          </div>
+        `;
+      }
+      showAlert(msg, 'error');
+
+      document.getElementById('resendConfirmBtn')?.addEventListener('click', async () => {
+        const sb = getSupabase();
+        if (!sb) return;
+        try {
+          const { error: resendErr } = await sb.auth.resend({
+            type: 'signup',
+            email: email
+          });
+          if (resendErr) {
+            showAlert('Could not resend: ' + resendErr.message, 'error');
+          } else {
+            showAlert(`Confirmation link resent to <b>${email}</b>! Please check your inbox.`, 'success');
+          }
+        } catch (e) {
+          showAlert(e.message, 'error');
+        }
+      });
+
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<span>Sign In</span> <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`;
+      return;
+    }
+
+    showAlert('Sign in successful! Redirecting to your dashboard...', 'success');
+    showToast('Welcome back', 'Successfully authenticated.');
+    setTimeout(() => {
+      window.location.href = 'profile.html';
+    }, 900);
+
+  } catch (err) {
+    showAlert(err.message || 'An unexpected error occurred.', 'error');
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = `<span>Sign In</span> <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`;
+  }
+});
+
+// ────────── HANDLE SIGN UP SUBMIT ──────────
+signUpForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  clearAlert();
+
+  const fullName = document.getElementById('regFullName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const phone = document.getElementById('regMobile').value.trim();
+  const bloodGroup = document.getElementById('regBloodGroup').value;
+  const city = document.getElementById('regCityName').value.trim();
+  const lastDonation = document.getElementById('regLastDate').value;
+  const terms = document.getElementById('regTerms').checked;
+  const submitBtn = document.getElementById('signUpSubmitBtn');
+
+  if (!fullName) { showAlert('Please enter your full name.'); document.getElementById('regFullName').focus(); return; }
+  if (!email) { showAlert('Please enter a valid email address.'); document.getElementById('regEmail').focus(); return; }
+  if (password.length < 6) { showAlert('Password must be at least 6 characters long.'); document.getElementById('regPassword').focus(); return; }
+  if (!phone) { showAlert('Please enter your mobile phone number.'); document.getElementById('regMobile').focus(); return; }
+  if (!bloodGroup) { showAlert('Please select your blood group.'); document.getElementById('regBloodGroup').focus(); return; }
+  if (!city) { showAlert('Please enter your city.'); document.getElementById('regCityName').focus(); return; }
+  if (!terms) { showAlert('You must consent to the DPDP data storage to register as a donor.'); return; }
+
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = `<span class="spinner"></span> Creating profile...`;
+
+  try {
+    const { data, error } = await signUpDonor({
+      email,
+      password,
+      fullName,
+      phone,
+      bloodGroup,
+      city,
+      lastDonation
+    });
+
+    if (error) {
+      let msg = error.message;
+      if (msg.toLowerCase().includes('email rate limit exceeded')) {
+        msg = `
+          <div style="font-weight:700;margin-bottom:4px;">Email Rate Limit Exceeded</div>
+          <div>Supabase's built-in email service is capped at 3–4 verification emails per hour.</div>
+          <div style="margin-top:8px;font-size:0.76rem;line-height:1.5;background:#fff;padding:8px 10px;border-radius:8px;border:1px solid #ffccc7;">
+            <b>How to fix immediately:</b> In your Supabase Dashboard, go to <b>Authentication &rarr; Providers &rarr; Email</b> and turn <b>OFF</b> "Confirm email". Then click <b>Save</b>. Signups and logins will work instantly without any limits!
+          </div>
+        `;
+      }
+      showAlert(msg, 'error');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<span>Create My Secure Profile</span>`;
+      return;
+    }
+
+    // Check if email confirmation is required by Supabase
+    if (data?.user && !data.session) {
+      showAlert(`Account created! A confirmation email has been sent to ${email}. Please confirm your email to sign in.`, 'success');
+      showToast('Account Created', 'Check your inbox to verify.');
+      setTimeout(() => {
+        setMode('signin');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<span>Create My Secure Profile</span>`;
+      }, 4000);
+    } else {
+      showAlert('Donor profile successfully registered! Redirecting to your passport...', 'success');
+      showToast('Registration Complete', 'Welcome to VeinToVein!');
+      setTimeout(() => {
+        window.location.href = 'profile.html';
+      }, 1000);
+    }
+
+  } catch (err) {
+    showAlert(err.message || 'Failed to create donor account.', 'error');
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = `<span>Create My Secure Profile</span>`;
+  }
+});
+
+// Mobile menu toggle
+const navToggle = document.getElementById('navToggle');
+const mobileMenu = document.getElementById('mobileMenu');
+navToggle?.addEventListener('click', () => {
+  const open = mobileMenu.classList.toggle('open');
+  navToggle.setAttribute('aria-expanded', String(open));
+});
+
+// Run auth check on load
+document.addEventListener('DOMContentLoaded', () => {
+  checkCurrentAuth();
+  const yearEl = document.getElementById('footerYear');
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+});
+</script>
+
+</body>
+</html>

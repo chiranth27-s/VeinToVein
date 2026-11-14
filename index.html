@@ -1,117 +1,508 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#991b35">
-  <title>VeinToVein | Blood Donation Network</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VeinToVein — India's Real-Time Blood Donation Network</title>
+<meta name="description" content="VeinToVein connects verified blood donors with hospitals in urgent need via real-time push notifications, AES-256 encrypted profiles, blood history tracking and instant eligibility verification.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23c1121f' d='M16 2C12 10 6 15 6 22a10 10 0 0 0 20 0C26 15 20 10 16 2z'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar" id="sidebar">
-      <a class="brand" href="#" aria-label="VeinToVein home">
-        <span class="brand-mark">V<span>+</span></span>
-        <span><strong>VeinToVein</strong><small>Blood connects us</small></span>
-      </a>
-      <div class="side-label">WORKSPACE</div>
-      <nav class="side-nav">
-        <a class="nav-link active" href="#overview" data-view="overview"><span>▦</span> Overview</a>
-        <a class="nav-link" href="#find-donors" data-view="find-donors"><span>⌕</span> Find donors</a>
-        <a class="nav-link" href="#urgent-requests" data-view="urgent-requests"><span>♡</span> Blood requests <b class="nav-count" id="requestCount">3</b></a>
-        <a class="nav-link" href="#my-profile" data-view="my-profile"><span>♙</span> My donor profile</a>
-      </nav>
-      <div class="side-label side-label-lower">PREFERENCES</div>
-      <nav class="side-nav">
-        <a class="nav-link" href="#notifications" data-view="notifications"><span>♧</span> Notifications <b class="dot"></b></a>
-        <a class="nav-link" href="#eligibility" data-view="eligibility"><span>✓</span> Eligibility guide</a>
-      </nav>
-      <div class="sidebar-help">
-        <div class="help-icon">✚</div>
-        <strong>Every drop matters.</strong>
-        <p>Your small act can make a life-changing difference.</p>
-        <a href="#find-donors" data-view="find-donors">Explore network →</a>
+
+<!-- ══════════ NAV ══════════ -->
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a class="logo" href="#home" aria-label="VeinToVein home">
+      <svg class="logo-mark" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <path d="M24 2C18.6 13.4 8.5 19.6 8.5 30a15.5 15.5 0 0 0 31 0C39.5 19.6 29.4 13.4 24 2Z" fill="url(#lg1)"/>
+        <path d="M14 30h6l2.4-7 3.4 11 2.8-8.6 2 4.6h3.4" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+        <defs><linearGradient id="lg1" x1="8" y1="2" x2="40" y2="46"><stop stop-color="#e5383b"/><stop offset="1" stop-color="#7f0d1a"/></linearGradient></defs>
+      </svg>
+      <span class="logo-text">Vein<b>To</b>Vein<small>BLOOD · NETWORK</small></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#requests">Live Requests</a></li>
+      <li><a href="#compatibility">Compatibility</a></li>
+      <li><a href="#eligibility">Eligibility</a></li>
+      <li><a href="profile.html">My Profile</a></li>
+      <li><a href="admin.html" style="color:var(--crimson);font-weight:700;">Admin Desk ↗</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="bell-btn" id="bellBtn" aria-label="Notifications" aria-expanded="false">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="bell-badge" id="bellBadge">4</span>
+      </button>
+      <div id="navAuthBtn" style="display:flex;align-items:center;gap:0.5rem;">
+        <a href="auth.html?mode=signin" class="btn btn-ghost btn-sm">Sign In</a>
+        <button class="btn btn-primary btn-sm" data-open-modal>Become a Donor</button>
       </div>
-      <div class="sidebar-user">
-        <div class="avatar">AS</div><div><strong id="sideUserName">Aarav Sharma</strong><small>Demo donor account</small></div>
-        <span class="more">•••</span>
+      <button class="hamburger" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <!-- Bell dropdown -->
+      <div class="bell-panel" id="bellPanel" role="dialog" aria-label="Recent notifications">
+        <div class="bell-panel-head"><span>PUSH NOTIFICATIONS</span><button id="markAllRead">Mark all as read</button></div>
+        <ul id="notifList" style="list-style:none;max-height:340px;overflow-y:auto">
+          <li class="notif unread"><span class="notif-dot"></span><div><p><b>O− critical</b> at Apollo Hospitals · Seshadripuram</p><time>2 min ago</time></div></li>
+          <li class="notif unread"><span class="notif-dot"></span><div><p><b>B+ request filled</b> at Fortis Hospital · Cunningham Road in 11 minutes</p><time>14 min ago</time></div></li>
+          <li class="notif unread"><span class="notif-dot"></span><div><p>Your <b>Eligibility Passport</b> remains active at Manipal Hospitals · Old Airport Rd</p><time>1 hr ago</time></div></li>
+          <li class="notif unread"><span class="notif-dot"></span><div><p><b>AB− urgent</b> requisition at Aster CMI Hospital · Hebbal</p><time>3 hr ago</time></div></li>
+        </ul>
       </div>
-    </aside>
-
-    <main class="main-content">
-      <header class="topbar">
-        <button class="menu-btn" id="menuBtn" aria-label="Toggle menu">☰</button>
-        <div class="breadcrumb">Workspace <span>/</span> <strong id="pageName">Overview</strong></div>
-        <div class="top-actions">
-          <span class="location-pill">⌖ <span id="locationLabel">Bengaluru, KA</span></span>
-          <button class="icon-btn" id="notificationBell" aria-label="Notifications">♧<i></i></button>
-          <div class="top-avatar" id="topAvatar">AS</div>
-        </div>
-      </header>
-
-      <section class="page-view active" id="overview">
-        <div class="welcome-row">
-          <div><p class="eyebrow">MONDAY, NOVEMBER 9, 2026</p><h1>Good morning, <span id="welcomeName">Aarav</span> <span class="wave">✦</span></h1><p class="muted">Your community is stronger because of people like you.</p></div>
-          <button class="primary-btn" data-open-modal="requestModal">＋ Create blood request</button>
-        </div>
-        <div class="hero-card">
-          <div class="hero-copy"><span class="hero-tag"><span class="pulse"></span> COMMUNITY IMPACT</span><h2>One donation.<br><em>Many more tomorrows.</em></h2><p>Connect with nearby donors and help hospitals find the right blood type when every second counts.</p><button class="light-btn" data-view="find-donors">Find a donor <span>→</span></button></div>
-          <div class="hero-art" aria-hidden="true"><div class="art-ring ring-one"></div><div class="art-ring ring-two"></div><div class="blood-drop">♥</div><div class="art-caption">GIVE BLOOD<br><b>GIVE HOPE</b></div></div>
-        </div>
-        <div class="stats-grid">
-          <article class="stat-card"><div class="stat-top"><span>Active donors nearby</span><span class="stat-icon red">♙</span></div><strong id="donorStat">1,284</strong><small><b class="positive">↑ 12%</b> this month</small></article>
-          <article class="stat-card"><div class="stat-top"><span>Urgent requests</span><span class="stat-icon orange">♡</span></div><strong id="urgentStat">08</strong><small>Across your local network</small></article>
-          <article class="stat-card"><div class="stat-top"><span>Lives supported</span><span class="stat-icon green">✚</span></div><strong>3,642</strong><small><b class="positive">↑ 8%</b> this month</small></article>
-          <article class="stat-card"><div class="stat-top"><span>Your donations</span><span class="stat-icon purple">✦</span></div><strong id="donationStat">02</strong><small>Thank you for giving</small></article>
-        </div>
-        <div class="content-grid">
-          <section class="panel requests-panel"><div class="section-heading"><div><p class="eyebrow">NEEDS YOUR ATTENTION</p><h3>Urgent blood requests</h3></div><a href="#urgent-requests" data-view="urgent-requests">View all →</a></div><div id="overviewRequests" class="request-list"></div></section>
-          <section class="panel profile-panel"><div class="section-heading"><div><p class="eyebrow">YOUR CONTRIBUTION</p><h3>Donor snapshot</h3></div><span class="verified-tag">● Demo profile</span></div><div class="profile-summary"><div class="blood-type">O<sup>+</sup></div><div><strong id="profileName">Aarav Sharma</strong><p>Blood group · <b id="profileBlood">O Positive</b></p><span class="availability"><i></i><span id="availabilityText">Available to donate</span></span></div></div><div class="profile-progress"><div><span>Profile completion</span><b id="completionText">75%</b></div><div class="progress-track"><span id="completionBar" style="width:75%"></span></div></div><button class="outline-btn full-btn" data-view="my-profile">View donor profile →</button></section>
-        </div>
-        <div class="bottom-note"><span>✚</span><div><strong>Important health reminder</strong><p>Donation eligibility depends on a health assessment by qualified medical staff. This website is a student demo, not a medical screening tool.</p></div></div>
-      </section>
-
-      <section class="page-view" id="find-donors">
-        <div class="page-title-row"><div><p class="eyebrow">LOCAL DONOR DIRECTORY</p><h1>Find a blood donor</h1><p class="muted">Search the demo directory by blood group and location.</p></div></div>
-        <div class="panel search-panel"><div class="search-fields"><label>Blood group<select id="bloodFilter"><option value="All">All blood groups</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></label><label>Area / city<input id="areaFilter" type="text" placeholder="e.g. Indiranagar"></label><label>Availability<select id="availabilityFilter"><option value="All">Any availability</option><option value="Available">Available</option><option value="Unavailable">Unavailable</option></select></label><button class="primary-btn" id="searchBtn">Search donors</button></div><p class="privacy-hint">🔒 Demo directory only. Real donor contact details should only be shared with consent.</p></div>
-        <div class="directory-heading"><h3>Nearby donors <span id="resultCount">6</span></h3><span class="muted small">Sample data · Bengaluru</span></div>
-        <div class="donor-grid" id="donorGrid"></div>
-      </section>
-
-      <section class="page-view" id="urgent-requests">
-        <div class="page-title-row"><div><p class="eyebrow">HOSPITAL & COMMUNITY NEEDS</p><h1>Blood requests</h1><p class="muted">Review urgent requests and register a demo response.</p></div><button class="primary-btn" data-open-modal="requestModal">＋ New request</button></div>
-        <div class="filter-chips"><button class="chip active" data-priority="All">All requests</button><button class="chip" data-priority="Critical">Critical</button><button class="chip" data-priority="Urgent">Urgent</button><button class="chip" data-priority="Normal">Normal</button></div>
-        <div class="request-list request-list-large" id="allRequests"></div>
-      </section>
-
-      <section class="page-view" id="my-profile">
-        <div class="page-title-row"><div><p class="eyebrow">DONOR ACCOUNT</p><h1>My donor profile</h1><p class="muted">Manage your demo profile and donation history.</p></div><button class="outline-btn" id="editProfileBtn">✎ Edit profile</button></div>
-        <div class="profile-layout"><div class="panel profile-main"><div class="profile-cover"></div><div class="profile-main-body"><div class="large-avatar" id="largeAvatar">AS</div><h2 id="fullName">Aarav Sharma</h2><p class="muted" id="profileCity">Bengaluru, Karnataka</p><span class="verified-tag">● Demo account</span><div class="detail-grid"><div><small>Blood group</small><strong id="detailBlood">O+</strong></div><div><small>Age</small><strong id="detailAge">22 years</strong></div><div><small>Last donation</small><strong id="detailLast">12 Aug 2026</strong></div><div><small>Phone</small><strong id="detailPhone">Not shared</strong></div></div><div class="availability-toggle"><div><strong>Available for donation</strong><p class="muted small">This is a demo status, not eligibility clearance.</p></div><label class="switch"><input type="checkbox" id="availableToggle" checked><span></span></label></div></div></div>
-          <div class="profile-side"><div class="panel"><div class="section-heading"><h3>Donation history</h3><span class="muted small">Demo records</span></div><div id="historyList" class="history-list"></div><button class="outline-btn full-btn" id="addHistoryBtn">＋ Add demo history entry</button></div><div class="panel eligibility-mini"><div class="stat-icon green">✓</div><h3>Eligibility information</h3><p class="muted small">Your actual eligibility must be assessed by a blood bank or qualified healthcare professional.</p><button class="text-btn" data-view="eligibility">Read eligibility guide →</button></div></div></div>
-      </section>
-
-      <section class="page-view" id="notifications">
-        <div class="page-title-row"><div><p class="eyebrow">STAY IN THE LOOP</p><h1>Notifications</h1><p class="muted">Urgent requests and updates from your demo network.</p></div><button class="outline-btn" id="enablePushBtn">♧ Enable browser alerts</button></div>
-        <div class="panel notification-panel"><div class="section-heading"><h3>Recent activity</h3><button class="text-btn" id="clearNotifications">Clear all</button></div><div id="notificationList"></div></div>
-        <div class="bottom-note"><span>🔔</span><div><strong>About notifications</strong><p>This frontend can request browser notification permission while the page is open. True background push notifications require a backend and push service.</p></div></div>
-      </section>
-
-      <section class="page-view" id="eligibility">
-        <div class="page-title-row"><div><p class="eyebrow">DONOR WELLNESS</p><h1>Eligibility guide</h1><p class="muted">General information to help you prepare before contacting a blood bank.</p></div></div>
-        <div class="eligibility-grid"><article class="panel"><div class="guide-icon green">✓</div><h3>Before you donate</h3><ul><li>Carry valid identification and answer the screening questions honestly.</li><li>Have a meal and stay well hydrated, following the blood bank's instructions.</li><li>Tell staff about medicines, recent illness, travel and medical history.</li><li>Follow the blood bank's advice on donation intervals.</li></ul></article><article class="panel"><div class="guide-icon orange">!</div><h3>Important to know</h3><ul><li>Age, weight, haemoglobin, health conditions and other criteria may affect eligibility.</li><li>Eligibility rules vary by country and blood bank.</li><li>Do not donate if you feel unwell; contact a qualified professional.</li><li>Only trained staff can confirm whether you can donate today.</li></ul></article></div>
-        <div class="bottom-note"><span>⚕</span><div><strong>Medical disclaimer</strong><p>VeinToVein is a student project prototype. This checklist is not a diagnosis, medical advice, or eligibility verification. Do not use it to decide whether to donate.</p></div></div>
-      </section>
-      <footer>© 2026 VeinToVein · Student project prototype <span>Built to bring help closer.</span></footer>
-    </main>
+    </div>
   </div>
+</header>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#requests">Live Requests</a>
+  <a href="#compatibility">Compatibility Chart</a>
+  <a href="#eligibility">Eligibility Checker</a>
+  <a href="profile.html">My Profile</a>
+  <a href="admin.html" style="color:var(--crimson);font-weight:700;">Admin Control Desk ↗</a>
+  <a href="#hospitals">For Hospitals</a>
+  <a href="#faq">FAQ</a>
+  <a href="auth.html?mode=signin" style="color:var(--ink)">Sign In</a>
+  <a href="auth.html?mode=signup" style="color:var(--crimson)">Become a Donor →</a>
+</div>
 
-  <div class="modal-backdrop" id="requestModal"><div class="modal"><div class="modal-head"><div><p class="eyebrow">COMMUNITY SUPPORT</p><h2>Create blood request</h2></div><button class="close-btn" data-close-modal>×</button></div><form id="requestForm"><label>Hospital / requester name<input name="hospital" required placeholder="e.g. City Care Hospital"></label><div class="form-row"><label>Blood group<select name="blood" required><option value="">Select group</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></label><label>Units needed<input name="units" type="number" min="1" max="20" value="2" required></label></div><div class="form-row"><label>Area<input name="area" required placeholder="e.g. Jayanagar"></label><label>Priority<select name="priority"><option>Urgent</option><option>Critical</option><option>Normal</option></select></label></div><label>Contact number<input name="contact" type="tel" placeholder="Hospital contact (demo)"></label><p class="form-disclaimer">Demo only: do not enter real patient information or sensitive medical details.</p><button class="primary-btn full-btn" type="submit">Publish demo request</button></form></div></div>
+<!-- ══════════ HERO ══════════ -->
+<section class="hero" id="home">
+  <canvas id="cellCanvas" aria-hidden="true"></canvas>
+  <div class="container hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow"><span class="live-dot"></span>LIVE · 214 CITIES CONNECTED</span>
+      <h1>The shortest distance between a donor and a <span class="scribble">life&nbsp;saved<svg viewBox="0 0 220 20" fill="none" aria-hidden="true"><path d="M4 14c40-9 70 6 108-4 34-9 74 2 104-5" stroke="#c1121f" stroke-width="4.5" stroke-linecap="round" opacity="0.85"/></svg></span>.</h1>
+      <p class="hero-sub">VeinToVein matches you with hospitals in urgent need of your exact blood type — real-time push alerts, 30-minute walk-in donations, and AES-256 encrypted medical profiles. No queues. No paperwork. No guesswork.</p>
+      <div class="hero-ctas">
+        <button class="btn btn-primary" data-open-modal>Become a Donor — it's free
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <a class="btn btn-ghost" href="#hospitals">Request Blood Now
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+      <div class="secure-line">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c98a2c" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        End-to-end encrypted · DPDP Act 2023 compliant · Your data is never sold
+      </div>
+      <div class="trust-row">
+        <div class="avatar-stack" aria-hidden="true">
+          <span style="background:#a4133c">AR</span><span style="background:#1d4ed8">RV</span><span style="background:#0f766e">MK</span><span style="background:#7c3aed">SP</span><span style="background:#b45309">NJ</span><span style="background:#334155">KD</span>
+        </div>
+        <p><b>12,400+ verified donors</b> already onboard<br><span class="stars">★★★★★</span> <b>4.9/5</b> · 8,200 reviews</p>
+      </div>
+    </div>
 
-  <div class="modal-backdrop" id="profileModal"><div class="modal"><div class="modal-head"><div><p class="eyebrow">YOUR DETAILS</p><h2>Edit donor profile</h2></div><button class="close-btn" data-close-modal>×</button></div><form id="profileForm"><label>Full name<input name="name" required></label><div class="form-row"><label>Blood group<select name="blood"><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></label><label>Age<input name="age" type="number" min="18" max="100"></label></div><label>City<input name="city"></label><label>Phone (optional)<input name="phone" type="tel" placeholder="Not shared"></label><button class="primary-btn full-btn" type="submit">Save profile</button></form></div></div>
-  <div class="toast" id="toast" role="status"></div>
-  <script src="script.js"></script>
+    <div class="hero-visual" aria-hidden="true">
+      <div class="float-card fc-1">
+        <div class="fc-icon fc-red"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C9.5 8 5 11.5 5 16a7 7 0 0 0 14 0c0-4.5-4.5-8-7-14z"/></svg></div>
+        <div><span class="tag-mini tag-critical">URGENT · O−</span><p><b>Apollo Hospitals</b><br>Seshadripuram · 4 units needed</p></div>
+      </div>
+      <div class="float-card fc-2">
+        <div class="fc-icon fc-gold"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+        <div style="flex:1"><span class="tag-mini tag-gold">LIVE PULSE</span><p><b>128 donors</b> within 10 km</p>
+          <svg class="ecg-line" width="150" height="30" viewBox="0 0 150 30"><path class="ecg-path" d="M2 17h22l5-12 7 21 6-16 4.5 7H78l5-12 7 21 6-16 4.5 7H148" fill="none" stroke="#c1121f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="float-card fc-3">
+        <div class="fc-icon fc-green"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+        <div><span class="tag-mini tag-ok">DONATION COMPLETE</span><p><b>+120 impact points</b><br>Certificate issued to A. Sharma</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ TICKER ══════════ -->
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-inner" id="tickerInner">
+    <span class="tick-item hot"><svg width="11" height="11" viewBox="0 0 24 24" fill="#ffd9d9"><path d="M12 2C9.5 8 5 11.5 5 16a7 7 0 0 0 14 0c0-4.5-4.5-8-7-14z"/></svg>CRITICAL · O− at Apollo Hospitals, Seshadripuram — 4 units</span>
+    <span class="tick-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="#ffd9d9"><path d="M12 2C9.5 8 5 11.5 5 16a7 7 0 0 0 14 0c0-4.5-4.5-8-7-14z"/></svg>Fortis Hospital, Cunningham Road filled a B+ req in 11 minutes</span>
+    <span class="tick-item hot"><svg width="11" height="11" viewBox="0 0 24 24" fill="#ffd9d9"><path d="M12 2C9.5 8 5 11.5 5 16a7 7 0 0 0 14 0c0-4.5-4.5-8-7-14z"/></svg>AB− urgent at Aster CMI Hospital, Hebbal — 2 units remaining</span>
+    <span class="tick-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="#ffd9d9"><path d="M12 2C9.5 8 5 11.5 5 16a7 7 0 0 0 14 0c0-4.5-4.5-8-7-14z"/></svg>Manipal Hospitals, Old Airport Road — donors on standby</span>
+    <span class="tick-item hot"><svg width="11" height="11" viewBox="0 0 24 24" fill="#ffd9d9"><path d="M12 2C9.5 8 5 11.5 5 16a7 7 0 0 0 14 0c0-4.5-4.5-8-7-14z"/></svg>A+ required at Narayana Health City, Bommasandra</span>
+    <span class="tick-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="#ffd9d9"><path d="M12 2C9.5 8 5 11.5 5 16a7 7 0 0 0 14 0c0-4.5-4.5-8-7-14z"/></svg>Platelets needed at Manipal Hospitals Sarjapur Road, Bellandur</span>
+  </div>
+</div>
+
+<!-- ══════════ STATS ══════════ -->
+<div class="container stats-wrap">
+  <div class="stats-card" role="region" aria-label="Network statistics">
+    <div class="stat"><div class="num"><span data-count="128400" data-format="in">0</span><i>+</i></div><div class="lbl">Donations Facilitated</div></div>
+    <div class="stat"><div class="num"><span data-count="2340" data-format="in">0</span><i>+</i></div><div class="lbl">Partner Hospitals</div></div>
+    <div class="stat"><div class="num"><span data-count="98.2" data-decimals="1">0</span><i>%</i></div><div class="lbl">Requests Fulfilled</div></div>
+    <div class="stat"><div class="num"><span data-count="41">0</span><i>s</i></div><div class="lbl">Median Push-to-Accept</div></div>
+  </div>
+</div>
+
+<!-- ══════════ HOW IT WORKS ══════════ -->
+<section class="section" id="how">
+  <div class="container">
+    <div class="section-head center">
+      <span class="eyebrow-plain">How It Works</span>
+      <h2 class="title">From alert to life saved,<br>in under 30 minutes.</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="step-num">01</div><div class="step-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#c1121f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7.5" r="4"/><path d="M20 8v6M23 11h-6"/></svg></div><h3>Register & Verify</h3><p>One-time KYC with Aadhaar or hospital lab report. Your blood group is lab-verified, your profile encrypted at rest.</p></div>
+      <div class="step"><div class="step-num">02</div><div class="step-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#c1121f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div><h3>Get Smart Alerts</h3><p>Push notifications fire only for your type, within your radius, after your eligibility cooldown. No spam — ever.</p></div>
+      <div class="step"><div class="step-num">03</div><div class="step-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#c1121f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></div><h3>Walk In, QR In Pocket</h3><p>Accept a request and receive a QR e-pass. Skip the queue at the blood bank — the whole visit takes ~30 minutes.</p></div>
+      <div class="step"><div class="step-num">04</div><div class="step-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#c1121f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 4.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div><h3>Lives, Tracked</h3><p>See who you helped (anonymously), earn impact points and badges, and watch your eligibility passport renew itself.</p></div>
+    </div>
+    <div class="partners" aria-hidden="true"><span>APOLLO HOSPITALS</span><span>FORTIS HOSPITAL</span><span>ASTER CMI</span><span>MANIPAL HOSPITALS</span><span>NARAYANA HEALTH CITY</span><span>MANIPAL SARJAPUR</span></div>
+    <p class="partners-note">Empanelled partner hospitals & blood banks across Bengaluru</p>
+  </div>
+</section>
+
+<!-- ══════════ LIVE REQUESTS ══════════ -->
+<section class="section dark-sec on-dark" id="requests">
+  <div class="container">
+    <div class="live-head-row">
+      <div>
+        <span class="eyebrow-plain">Live Emergency Feed</span>
+        <h2 class="title" style="color:#ffffff;">Right now, someone<br>is waiting for <em style="color:#ffffff;">your type.</em></h2>
+      </div>
+      <div class="live-meta">
+        <span class="live-chip"><span class="live-dot"></span>LIVE FEED</span>
+        <div class="clock-box"><span id="liveClock">--:--:--</span><small>IST · auto-refreshes</small></div>
+      </div>
+    </div>
+    <div class="compat-indicator-bar" id="compatBar">
+      <div class="compat-donor-pill">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C9.5 8 5 11.5 5 16a7 7 0 0 0 14 0c0-4.5-4.5-8-7-14z"/></svg>
+        <span id="compatBarContent">Loading verified donor compatibility...</span>
+      </div>
+      <div id="compatBarAction" style="display:flex;align-items:center;gap:0.6rem;"></div>
+    </div>
+
+    <div class="requests-grid" id="requestGrid" aria-live="polite"></div>
+    <div class="feed-foot">
+      <span><b id="fulfilledToday">27</b> requisitions fulfilled today · feed updates every 1–2 minutes</span>
+      <span>Accepting a request instantly notifies the hospital blood bank</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ COMPATIBILITY ══════════ -->
+<section class="section" id="compatibility">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow-plain">ABO × RhD Matrix</span>
+      <h2 class="title">Know your type.<br>Know who it saves.</h2>
+      <p class="lead">Tap any blood group to see exactly who you can donate to — and who can save you.</p>
+    </div>
+    <div class="compat-wrap">
+      <div class="compat-panel">
+        <h3>Select a Blood Type</h3>
+        <div class="type-grid" id="typeGrid"></div>
+        <div class="compat-readout">
+          <div class="compat-big" id="compatBig">O−</div>
+          <div><span class="compat-tag" id="compatTag">Universal Donor</span><p id="compatNote">O− red cells carry no A, B or RhD antigens — they can be transfused into any ABO/Rh patient in an emergency.</p></div>
+        </div>
+      </div>
+      <div class="compat-panel">
+        <div class="chip-flow"><h3>Can Donate To</h3><div class="chips" id="donateToChips"></div></div>
+        <div class="chip-flow" style="margin-top:1.6rem"><h3>Can Receive From</h3><div class="chips" id="receiveFromChips"></div></div>
+        <p class="compat-note">Compatibility is governed by ABO and Rh(D) antigens on red-cell surfaces. In critical shortages, hospitals prioritise O− and O+ donors first. Whole blood may be donated once every 90 days; platelets every 14 days.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ ELIGIBILITY ══════════ -->
+<section class="section" id="eligibility" style="background:#f3ece4;padding-top:0">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow-plain">Instant Verification</span>
+      <h2 class="title">Am I eligible?<br>Ask the network.</h2>
+      <p class="lead">Six questions. Ten seconds. A signed eligibility verdict — the same logic our clinical engine runs before you walk in.</p>
+    </div>
+    <div class="elig-wrap">
+      <form class="elig-form" id="eligForm" novalidate>
+        <div class="form-grid">
+          <div class="field"><label for="elAge">Your Age (years)</label><input type="number" id="elAge" min="0" max="120" value="27" required></div>
+          <div class="field"><label for="elWeight">Weight (kg)</label><input type="number" id="elWeight" min="0" max="300" step="0.5" value="68" required></div>
+          <div class="field full"><label for="elLast">Days since your last donation</label>
+            <select id="elLast">
+              <option value="never">Never donated before</option>
+              <option value="30">Less than 60 days ago</option>
+              <option value="75">60 – 89 days ago</option>
+              <option value="100" selected>90 – 119 days ago</option>
+              <option value="150">120 – 180 days ago</option>
+              <option value="365">More than 180 days ago</option>
+            </select>
+          </div>
+          <div class="field"><label for="elHb">Hemoglobin ≥ 12.5 g/dL?</label>
+            <select id="elHb"><option value="yes" selected>Yes, tested recently</option><option value="no">No / not sure / lower</option></select>
+          </div>
+          <div class="field"><label>Feeling well today?</label>
+            <div class="pill-group">
+              <label class="pill"><input type="radio" name="well" value="yes" checked><span>Yes</span></label>
+              <label class="pill"><input type="radio" name="well" value="no"><span>Fever / unwell</span></label>
+            </div>
+          </div>
+          <div class="field full"><label>Tattoo, piercing or major surgery in the last 6 months?</label>
+            <div class="pill-group">
+              <label class="pill"><input type="radio" name="deferral" value="no" checked><span>No</span></label>
+              <label class="pill"><input type="radio" name="deferral" value="yes"><span>Yes</span></label>
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-dark btn-block" style="margin-top:1.3rem">Verify My Eligibility
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/></svg>
+        </button>
+        <p class="elig-foot">Final clearance always rests with the attending medical officer at the donation site. This tool is advisory, not a diagnosis.</p>
+      </form>
+      <div class="elig-result" id="elResult" aria-live="polite">
+        <div class="result-idle" id="resIdle">
+          <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#c9b8ad" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto"><path d="M12 2C9.5 8 5 11.5 5 16a7 7 0 0 0 14 0c0-4.5-4.5-8-7-14z"/><path d="M9.5 15.5a2.5 2.5 0 0 0 2.5 2.5"/></svg>
+          <h4>Your verdict appears here</h4>
+          <p>Answer the questions and tap verify — your encrypted eligibility passport updates instantly.</p>
+        </div>
+        <div class="result-ok" id="resOk" hidden>
+          <div class="ring"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+          <h4>You're cleared to donate</h4>
+          <p>Your profile qualifies for whole blood donation today. A QR e-pass is generated automatically when you accept a nearby requisition.</p>
+          <span class="next-chip" style="border-color:rgba(31,157,85,.4);color:#14532d;background:#e9fbef"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Eligibility Passport · VALID</span>
+        </div>
+        <div class="result-wait" id="resWait" hidden>
+          <div class="ring"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+          <h4>Not today — but soon</h4>
+          <p>A short deferral protects both you and the recipient. Here's what to resolve:</p>
+          <ul id="elReasons"></ul>
+          <span class="next-chip" id="elNextWrap"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4"/></svg><span id="elNextDate">Next eligible date</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ HOSPITALS ══════════ -->
+<section class="section" id="hospitals">
+  <div class="container">
+    <div class="hosp-wrap">
+      <div>
+        <span class="eyebrow-plain">For Hospitals & Blood Banks</span>
+        <h2 class="title">Post a requisition.<br>Watch donors <em style="color:var(--crimson)">move.</em></h2>
+        <div class="hosp-list">
+          <div class="hosp-item"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#c1121f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg><span><b>Broadcast in 60 seconds</b> — geo-targeted push to verified, type-matched, eligible donors within your radius.</span></div>
+          <div class="hosp-item"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#c1121f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/></svg><span><b>Verified network only</b> — NABH / CGHS empanelment documents checked within 24 hours of onboarding.</span></div>
+          <div class="hosp-item"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#c1121f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg><span><b>Live dashboard</b> — track acceptances, en-route ETAs, unit-level fulfilment and audit trails in real time.</span></div>
+          <div class="hosp-item"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#c1121f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span><b>Zero cost for emergencies</b> — critical requisitions are always broadcast free of charge.</span></div>
+        </div>
+
+        <!-- Empanelled Hospitals & Locations Directory -->
+        <div style="margin-top:1.6rem;background:var(--paper);border:1.5px solid var(--line);border-radius:18px;padding:1.2rem;box-shadow:0 8px 24px rgba(23,16,14,0.04);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.85rem;">
+            <span style="font-size:0.7rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--crimson);font-weight:700;">Empanelled Hospitals & Blood Banks</span>
+            <span style="font-size:0.68rem;background:#fff;border:1px solid var(--line);padding:2px 8px;border-radius:99px;color:var(--muted);font-weight:600;">Bengaluru Hub</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:0.65rem;">
+            <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:0.7rem 0.85rem;">
+              <div style="font-size:0.84rem;font-weight:700;color:var(--ink);">Apollo Hospitals</div>
+              <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">Seshadripuram</div>
+            </div>
+            <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:0.7rem 0.85rem;">
+              <div style="font-size:0.84rem;font-weight:700;color:var(--ink);">Fortis Hospital</div>
+              <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">Cunningham Road, Vasanth Nagar</div>
+            </div>
+            <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:0.7rem 0.85rem;">
+              <div style="font-size:0.84rem;font-weight:700;color:var(--ink);">Aster CMI Hospital</div>
+              <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">Hebbal, Sahakara Nagar</div>
+            </div>
+            <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:0.7rem 0.85rem;">
+              <div style="font-size:0.84rem;font-weight:700;color:var(--ink);">Manipal Hospitals</div>
+              <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">Old Airport Road, Kodihalli</div>
+            </div>
+            <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:0.7rem 0.85rem;">
+              <div style="font-size:0.84rem;font-weight:700;color:var(--ink);">Narayana Health City</div>
+              <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">Bommasandra</div>
+            </div>
+            <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:0.7rem 0.85rem;">
+              <div style="font-size:0.84rem;font-weight:700;color:var(--ink);">Manipal Hospitals Sarjapur Road</div>
+              <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">Bellandur, Sarjapur Road</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <form class="hosp-form-card" id="reqForm" novalidate>
+        <div id="reqFormWrap">
+          <h3 class="serif">Broadcast a Requisition</h3>
+          <p>Empanelled hospitals only. All requests are logged and audited.</p>
+          <div class="form-grid">
+            <div class="field full"><label for="reqHospital">Hospital / Blood Bank</label>
+              <select id="reqHospital" required>
+                <option value="">Select empanelled hospital…</option>
+                <option value="Apollo Hospitals · Seshadripuram">Apollo Hospitals — Seshadripuram</option>
+                <option value="Fortis Hospital · Cunningham Road, Vasanth Nagar">Fortis Hospital — Cunningham Road, Vasanth Nagar</option>
+                <option value="Aster CMI Hospital · Hebbal, Sahakara Nagar">Aster CMI Hospital — Hebbal, Sahakara Nagar</option>
+                <option value="Manipal Hospitals · Old Airport Road, Kodihalli">Manipal Hospitals — Old Airport Road, Kodihalli</option>
+                <option value="Narayana Health City · Bommasandra">Narayana Health City — Bommasandra</option>
+                <option value="Manipal Hospitals Sarjapur Road · Bellandur, Sarjapur Road">Manipal Hospitals Sarjapur Road — Bellandur, Sarjapur Road</option>
+              </select>
+            </div>
+            <div class="field"><label for="reqType">Blood Group</label>
+              <select id="reqType"><option>O−</option><option>O+</option><option>A−</option><option selected>A+</option><option>B−</option><option>B+</option><option>AB−</option><option>AB+</option></select>
+            </div>
+            <div class="field"><label for="reqUnits">Units Required</label><input type="number" id="reqUnits" min="1" max="20" value="2" required></div>
+            <div class="field full"><label for="reqUrgency">Urgency Level</label>
+              <select id="reqUrgency"><option>Critical — within 2 hours</option><option selected>Urgent — within 6 hours</option><option>Planned — elective surgery</option></select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" style="margin-top:1.2rem">Broadcast to Nearby Donors
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+          </button>
+        </div>
+        <div class="req-success" id="reqSuccess">
+          <div class="big-check"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+          <h3 class="serif" style="margin-top:1rem">Requisition Live</h3>
+          <div class="req-id" id="reqIdOut">VT-0000</div>
+          <p style="font-size:.85rem;color:var(--muted)" id="reqSuccessDetail">212 eligible donors within 10 km have been notified.</p>
+          <button type="button" class="btn btn-ghost btn-sm" id="reqAgain" style="margin-top:1rem">Post another requisition</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ TESTIMONIALS ══════════ -->
+<section class="section testi-sec">
+  <div class="container">
+    <div class="section-head center">
+      <span class="eyebrow-plain">Voices From The Network</span>
+      <h2 class="title">Stories carried<br>by the current.</h2>
+    </div>
+    <div class="testi-viewport">
+      <div class="testi-track" id="tTrack">
+        <figure class="testi-slide"><div class="quote-mark">&ldquo;</div><blockquote>I got the push at 6:14 in the morning. By 6:40 I was signed in at Apollo. The unit went to a newborn in the NICU. I never even knew her name — but I think about her every week.</blockquote><div class="testi-person"><div class="avatar-stack"><span style="background:#a4133c">AR</span></div><div><b>Ananya Rao, 26</b><span>Regular O− donor · Chennai · 14 donations</span></div></div></figure>
+        <figure class="testi-slide"><div class="quote-mark">&ldquo;</div><blockquote>Requisitions that once took three days to fill now close in under forty minutes. VeinToVein did not just digitise blood donation — it compressed time itself in our emergency ward.</blockquote><div class="testi-person"><div class="avatar-stack"><span style="background:#0f766e">MK</span></div><div><b>Dr. Meera Krishnan</b><span>Chief Medical Officer · Apollo Hospitals, Greams Road</span></div></div></figure>
+        <figure class="testi-slide"><div class="quote-mark">&ldquo;</div><blockquote>The eligibility passport and auto-reminders removed all the friction. This March I completed my fourteenth donation — the app literally told me the moment I became eligible again.</blockquote><div class="testi-person"><div class="avatar-stack"><span style="background:#1d4ed8">RV</span></div><div><b>Rahul Verma, 31</b><span>B+ donor · Delhi NCR · Gold Tier</span></div></div></figure>
+      </div>
+    </div>
+    <div class="testi-nav">
+      <button class="t-arrow" id="tPrev" aria-label="Previous story"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <div class="t-dots" id="tDots"></div>
+      <button class="t-arrow" id="tNext" aria-label="Next story"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ FAQ ══════════ -->
+<section class="section" id="faq" style="padding-top:1rem">
+  <div class="container">
+    <div class="section-head center">
+      <span class="eyebrow-plain">Questions</span>
+      <h2 class="title">Before you roll<br>up your sleeve.</h2>
+    </div>
+    <div class="faq-wrap">
+      <div class="faq-item open"><button class="faq-q" aria-expanded="true">Who is eligible to donate blood?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><div class="faq-a"><p>Most healthy adults aged 18–65, weighing at least 45 kg, with hemoglobin ≥ 12.5 g/dL, who haven't donated whole blood in the last 90 days, and are free of fever or infection, are eligible. Recent tattoos, piercings or major surgery defer you for 6 months. Try the 10-second eligibility checker above — your lab-verified profile is updated automatically.</p></div></div>
+      <div class="faq-item"><button class="faq-q" aria-expanded="false">How are push notifications matched to my type?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><div class="faq-a"><p>When a hospital posts a requisition, our matching engine filters donors by ABO/Rh compatibility, real-time location (default 10 km radius), lab-verified group, eligibility cooldown and a per-donor notification frequency cap. If the first ring of donors can't fulfil it, the radius cascades outward automatically — silent, instant and surgical.</p></div></div>
+      <div class="faq-item"><button class="faq-q" aria-expanded="false">Is my medical data secure?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><div class="faq-a"><p>Yes. Profiles are encrypted with AES-256 at rest and TLS 1.3 in transit, with field-level encryption for blood history and lab values. We are DPDP Act 2023 compliant, never sell or share data for advertising, and you can export or permanently erase your record at any time from Settings.</p></div></div>
+      <div class="faq-item"><button class="faq-q" aria-expanded="false">What happens after I accept a request?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><div class="faq-a"><p>You receive a QR e-pass with the hospital, desk and contact person. Show it at the blood bank — no queue, no forms. The donation takes about 30 minutes. Afterwards your eligibility passport renews automatically, your history is appended, and an impact certificate with your points is issued instantly.</p></div></div>
+      <div class="faq-item"><button class="faq-q" aria-expanded="false">Can hospitals post requisitions without verification?<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><div class="faq-a"><p>No. Every hospital uploads NABH or CGHS empanelment documents before its first broadcast. A dedicated verification desk clears new institutions within 24 hours, and any misuse of the network triggers immediate blacklisting and reporting to the State Blood Transfusion Council.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ NEWSLETTER CTA ══════════ -->
+<section class="section" style="padding-top:1rem">
+  <div class="container">
+    <div class="cta-panel">
+      <svg class="cta-drop" style="top:-40px;left:-40px" width="280" height="280" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width=".7"><path d="M12 2C9.5 8 5 11.5 5 16a7 7 0 0 0 14 0c0-4.5-4.5-8-7-14z"/></svg>
+      <svg class="cta-drop" style="bottom:-50px;right:-30px;transform:rotate(14deg)" width="320" height="320" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width=".7"><path d="M12 2C9.5 8 5 11.5 5 16a7 7 0 0 0 14 0c0-4.5-4.5-8-7-14z"/></svg>
+      <h2>The Weekly Lifeline</h2>
+      <p>One email, every Sunday, 7 AM — critical shortage alerts in your city, upcoming camps and one story of a life the network saved.</p>
+      <form class="nl-form" id="nlForm" novalidate>
+        <input type="email" id="nlEmail" placeholder="you@example.com" aria-label="Email address" required>
+        <button type="submit" class="btn btn-gold">Subscribe</button>
+      </form>
+      <div class="nl-msg" id="nlMsg" role="status"></div>
+      <p class="nl-fine">38,000 subscribers · Unsubscribe anytime · We never share your data</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ FOOTER ══════════ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <a class="logo" href="#home" style="text-decoration:none">
+          <svg class="logo-mark" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M24 2C18.6 13.4 8.5 19.6 8.5 30a15.5 15.5 0 0 0 31 0C39.5 19.6 29.4 13.4 24 2Z" fill="#e5383b"/><path d="M14 30h6l2.4-7 3.4 11 2.8-8.6 2 4.6h3.4" stroke="#170f0e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="logo-text">Vein<b style="color:#ff6b6b">To</b>Vein<small>BLOOD · NETWORK</small></span>
+        </a>
+        <p class="foot-mission">India's real-time bridge between verified blood donors and hospitals in urgent need — because no life should wait for a match.</p>
+        <div class="socials">
+          <a href="#" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg></a>
+          <a href="#" aria-label="X (Twitter)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></a>
+          <a href="#" aria-label="LinkedIn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 11v5M8 8v.01M12 16v-4.5M12 13a2.5 2.5 0 0 1 5 0v3"/></svg></a>
+          <a href="#" aria-label="YouTube"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M22 12s0 3-.4 4.4a2.8 2.8 0 0 1-2 2c-2 .5-7.6.5-7.6.5s-5.6 0-7.6-.5a2.8 2.8 0 0 1-2-2C2 15 2 12 2 12s0-3 .4-4.4a2.8 2.8 0 0 1 2-2c2-.5 7.6-.5 7.6-.5s5.6 0 7.6.5a2.8 2.8 0 0 1 2 2C22 9 22 12 22 12z"/><path d="M10.4 9.6v4.8L15 12l-4.6-2.4z" fill="currentColor" stroke="none"/></svg></a>
+        </div>
+      </div>
+      <nav aria-label="Donate"><h5>Donate</h5><a href="#eligibility">Check Eligibility</a><a href="#compatibility">Compatibility Chart</a><a href="#requests">Live Emergency Feed</a><a href="auth.html?mode=signin">Donor Sign In</a><a href="#" data-open-modal>Become a Donor</a><a href="profile.html">My Profile</a></nav>
+      <nav aria-label="Organization"><h5>Organization</h5><a href="admin.html" style="color:var(--crimson);font-weight:700;">Hospital Admin Portal ↗</a><a href="#how">How It Works</a><a href="#hospitals">For Hospitals</a><a href="#">About the Foundation</a><a href="#">Research & Reports</a><a href="#">Camps & Drives</a></nav>
+      <nav aria-label="Support"><h5>Support</h5><a href="#faq">FAQ</a><a href="#">Contact 24×7 Helpline</a><a href="#">Privacy & Data Rights</a><a href="#">Terms of Service</a><a href="#">DPDP Compliance</a></nav>
+    </div>
+    <div class="foot-bottom">
+      <span>© <span id="footerYear">2025</span> VeinToVein Foundation · Registered Section-8 Nonprofit</span>
+      <span class="sys-ok"><i></i>All systems operational · 256-bit encryption active</span>
+    </div>
+    <div class="watermark" aria-hidden="true">VEINTOVEIN</div>
+  </div>
+</footer>
+
+<!-- ══════════ REGISTRATION MODAL ══════════ -->
+<div class="modal-overlay" id="registerModal" role="dialog" aria-modal="true" aria-labelledby="regTitle" aria-hidden="true">
+  <div class="modal">
+    <div class="modal-head">
+      <div><h3 id="regTitle" class="serif">Become a VeinToVein Donor</h3><small>2-minute signup · AES-256 encrypted</small></div>
+      <button class="modal-close" id="closeModal" aria-label="Close"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <form id="registerForm" novalidate>
+        <div class="form-grid">
+          <div class="field full"><label for="regName">Full Name</label><input type="text" id="regName" placeholder="As on your Aadhaar / PAN" required></div>
+          <div class="field full"><label for="regEmail">Email Address</label><input type="email" id="regEmail" placeholder="your.name@example.com" required></div>
+          <div class="field full"><label for="regPassword">Password</label><input type="password" id="regPassword" placeholder="Minimum 6 characters" minlength="6" required></div>
+          <div class="field"><label for="regPhone">Mobile Number</label><input type="tel" id="regPhone" placeholder="+91 98765 43210" pattern="[0-9+\s-]{10,16}" required></div>
+          <div class="field"><label for="regGroup">Blood Group</label>
+            <select id="regGroup" required><option value="">Select…</option><option>O−</option><option>O+</option><option>A−</option><option>A+</option><option>B−</option><option>B+</option><option>AB−</option><option>AB+</option><option>Don't know — test me at next camp</option></select>
+          </div>
+          <div class="field"><label for="regCity">City</label><input type="text" id="regCity" placeholder="e.g. Bengaluru" required></div>
+          <div class="field"><label for="regLast">Last Donation</label><input type="date" id="regLast" max="2026-12-31"></div>
+        </div>
+        <label class="consent-row"><input type="checkbox" id="regConsent" required><span>I consent to VeinToVein storing my blood group, donation history and location for emergency matching — encrypted, never sold, deletable anytime under the DPDP Act 2023.</span></label>
+        <button type="submit" class="btn btn-primary btn-block" id="modalSubmitBtn">Create My Secure Profile
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </button>
+        <div style="text-align:center;margin-top:0.9rem;font-size:0.78rem;">
+          <span style="color:var(--muted)">Already have an account?</span>
+          <a href="auth.html?mode=signin" style="color:var(--crimson);font-weight:600;text-decoration:none;margin-left:4px;">Sign In &rarr;</a>
+        </div>
+      </form>
+      <div class="reg-success" id="regSuccess">
+        <div class="big-check"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+        <h3 class="serif" style="margin-top:1rem;font-size:1.35rem">Welcome to the network</h3>
+        <p style="font-size:.84rem;color:var(--muted);margin-top:.3rem">Your secure profile is created. Your Donor ID:</p>
+        <div class="req-id" id="donorIdOut" style="color:var(--crimson-deep)">VT-IN-2025-00000</div>
+        <div class="qr-grid" id="qrGrid" aria-hidden="true"></div>
+        <p style="font-size:.7rem;color:var(--muted)">Scan at any partner blood bank to check in instantly</p>
+        <button class="btn btn-dark btn-block" id="goDashboard" style="margin-top:1rem">Go to My Dashboard</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- toasts + back to top -->
+<div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
+<button class="back-top" id="backTop" aria-label="Back to top"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+
+<!-- Supabase SDK & App Integration -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="script.js" defer></script>
 </body>
 </html>

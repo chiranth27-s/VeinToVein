@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#170f0e">
+  <title>Hospital & Blood Bank Administration | VeinToVein Control Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;0,9..144,800;0,9..144,900;1,9..144,600&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Admin Command Center Styling */
+    :root {
+      --admin-bg: #120b0a;
+      --admin-card: #1c1311;
+      --admin-card-hover: #231816;
+      --admin-line: rgba(255, 255, 255, 0.08);
+      --admin-accent: #c1121f;
+      --admin-gold: #e9b44c;
+      --admin-green: #34d399;
+    }
+    body.admin-body {
+      background: var(--admin-bg);
+      color: rgba(250, 245, 239, 0.9);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .admin-header {
+      background: #170f0e;
+      border-bottom: 1px solid var(--admin-line);
+      position: sticky;
+      top: 0;
+      z-index: 99;
+      backdrop-filter: blur(12px);
+    }
+    .admin-nav-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.9rem 1.4rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .admin-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      text-decoration: none;
+      color: #fff;
+    }
+    .admin-badge {
+      background: rgba(229, 56, 59, 0.18);
+      border: 1px solid rgba(229, 56, 59, 0.45);
+      color: #ff8f8f;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.65rem;
+      border-radius: 99px;
+    }
+    .admin-quick-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .admin-main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem 1.4rem 4rem;
+      flex: 1;
+      width: 100%;
+    }
+    /* Hospital selector pills */
+    .hosp-tabs-wrap {
+      margin-bottom: 2rem;
+      background: var(--admin-card);
+      border: 1px solid var(--admin-line);
+      border-radius: 18px;
+      padding: 0.5rem;
+      display: flex;
+      gap: 0.4rem;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    .hosp-tab-btn {
+      background: transparent;
+      border: none;
+      color: rgba(250, 245, 239, 0.65);
+      padding: 0.65rem 1.1rem;
+      border-radius: 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .hosp-tab-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+    }
+    .hosp-tab-btn.active {
+      background: var(--crimson);
+      color: #fff;
+      box-shadow: 0 4px 18px rgba(193, 18, 31, 0.4);
+    }
+    .hosp-tab-btn .badge-count {
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 99px;
+      padding: 2px 7px;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+    /* Summary KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.2rem;
+      margin-bottom: 2rem;
+    }
+    .kpi-card {
+      background: var(--admin-card);
+      border: 1px solid var(--admin-line);
+      border-radius: 18px;
+      padding: 1.4rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--admin-line);
+    }
+    .kpi-card.alert-card::before {
+      background: linear-gradient(90deg, #ff4d6d, #e5383b);
+    }
+    .kpi-card.gold-card::before {
+      background: linear-gradient(90deg, #ffd166, #ff9f1c);
+    }
+    .kpi-card.green-card::before {
+      background: linear-gradient(90deg, #34d399, #10b981);
+    }
+    .kpi-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(250, 245, 239, 0.5);
+      margin-bottom: 0.6rem;
+    }
+    .kpi-value {
+      font-family: 'Fraunces', serif;
+      font-size: 2.2rem;
+      font-weight: 850;
+      color: #fff;
+      line-height: 1;
+    }
+    .kpi-sub {
+      font-size: 0.76rem;
+      color: rgba(250, 245, 239, 0.6);
+      margin-top: 0.5rem;
+    }
+    /* Section Headers */
+    .admin-sec-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+      margin-top: 2rem;
+    }
+    .admin-sec-title {
+      font-family: 'Fraunces', serif;
+      font-size: 1.35rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    /* Arrivals & Check-in Desk */
+    .arrival-table-wrap {
+      background: var(--admin-card);
+      border: 1px solid var(--admin-line);
+      border-radius: 18px;
+      overflow: hidden;
+      margin-bottom: 2.5rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+    .arrival-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+    .arrival-table th {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 1rem 1.2rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(250, 245, 239, 0.45);
+      border-bottom: 1px solid var(--admin-line);
+    }
+    .arrival-table td {
+      padding: 1.1rem 1.2rem;
+      border-bottom: 1px solid var(--admin-line);
+      vertical-align: middle;
+      color: rgba(250, 245, 239, 0.85);
+    }
+    .arrival-table tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .donor-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+    .donor-badge-grp {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: radial-gradient(circle at 35% 35%, #e5383b, #8f0d1e);
+      color: #fff;
+      font-family: 'Fraunces', serif;
+      font-weight: 800;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(229, 56, 59, 0.35);
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.35rem 0.75rem;
+      border-radius: 99px;
+    }
+    .status-enroute {
+      background: rgba(233, 180, 76, 0.15);
+      color: #ffd166;
+      border: 1px solid rgba(233, 180, 76, 0.35);
+      animation: pulseGlow 2s infinite;
+    }
+    .status-arrived {
+      background: rgba(59, 130, 246, 0.15);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.35);
+    }
+    .status-completed {
+      background: rgba(52, 211, 153, 0.15);
+      color: #6ee7b7;
+      border: 1px solid rgba(52, 211, 153, 0.35);
+    }
+    .status-cooling {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    .action-btn-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .btn-sm-action {
+      padding: 0.4rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s ease;
+    }
+    .btn-mark-arrived {
+      background: rgba(59, 130, 246, 0.18);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+    .btn-mark-arrived:hover {
+      background: #3b82f6;
+      color: #fff;
+    }
+    .btn-complete-donation {
+      background: rgba(52, 211, 153, 0.2);
+      color: #6ee7b7;
+      border: 1px solid rgba(52, 211, 153, 0.4);
+    }
+    .btn-complete-donation:hover {
+      background: #10b981;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+    }
+    /* Inventory Grid */
+    .inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 2.5rem;
+    }
+    .inv-card {
+      background: var(--admin-card);
+      border: 1px solid var(--admin-line);
+      border-radius: 14px;
+      padding: 1rem 0.8rem;
+      text-align: center;
+      transition: transform 0.2s;
+    }
+    .inv-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .inv-type {
+      font-family: 'Fraunces', serif;
+      font-weight: 850;
+      font-size: 1.4rem;
+      color: #fff;
+    }
+    .inv-units {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--admin-gold);
+      margin: 0.3rem 0;
+    }
+    .inv-status {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+    .inv-status.ok { color: #34d399; }
+    .inv-status.low { color: #ffd166; }
+    .inv-status.critical { color: #ff6b6b; }
+    .inv-ctrls {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      margin-top: 0.5rem;
+    }
+    .inv-ctrl-btn {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      border: 1px solid var(--admin-line);
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+      cursor: pointer;
+      font-size: 0.75rem;
+      line-height: 1;
+    }
+    .inv-ctrl-btn:hover {
+      background: var(--crimson);
+      border-color: var(--crimson);
+    }
+    /* Modal */
+    .admin-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .admin-modal-overlay.open {
+      display: flex;
+    }
+    .admin-modal {
+      background: #1c1311;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      max-width: 520px;
+      width: 100%;
+      padding: 2rem;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+      position: relative;
+    }
+    .admin-modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.4rem;
+    }
+    .admin-modal-head h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 1.4rem;
+      color: #fff;
+    }
+    .close-modal-btn {
+      background: none;
+      border: none;
+      color: rgba(250, 245, 239, 0.5);
+      cursor: pointer;
+      font-size: 1.4rem;
+    }
+    .close-modal-btn:hover { color: #fff; }
+    /* Empty state */
+    .empty-state {
+      padding: 3rem 1.5rem;
+      text-align: center;
+      color: rgba(250, 245, 239, 0.45);
+    }
+    .empty-state svg {
+      opacity: 0.4;
+      margin-bottom: 0.8rem;
+    }
+    @media (max-width: 1024px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .inventory-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    @media (max-width: 650px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+      .inventory-grid { grid-template-columns: repeat(2, 1fr); }
+      .arrival-table th, .arrival-table td { padding: 0.8rem 0.6rem; font-size: 0.78rem; }
+    }
+  </style>
+</head>
+<body class="admin-body">
+
+<!-- Admin Navigation Header -->
+<header class="admin-header">
+  <div class="admin-nav-row">
+    <div style="display:flex;align-items:center;gap:1.2rem;">
+      <a href="index.html" class="admin-brand">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#e5383b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2C9.5 8 5 11.5 5 16a7 7 0 0 0 14 0c0-4.5-4.5-8-7-14z"/>
+        </svg>
+        <span style="font-family:'Fraunces',serif;font-size:1.15rem;font-weight:800;letter-spacing:-0.01em;">
+          Vein<b style="color:#e5383b;">To</b>Vein
+        </span>
+      </a>
+      <span class="admin-badge">Hospital Control Center</span>
+    </div>
+
+    <div class="admin-quick-actions">
+      <button class="btn btn-primary btn-sm" id="btnOpenBroadcastModal" style="display:inline-flex;align-items:center;gap:0.4rem;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>Broadcast Requisition</span>
+      </button>
+      <button class="btn btn-ghost-light btn-sm" id="btnSimulateArrival" title="Simulate a donor accepting a request for testing arrival check-in">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>Test Donor Arrival</span>
+      </button>
+      <a href="profile.html" class="btn btn-ghost-light btn-sm">Donor Passport</a>
+      <a href="index.html" class="btn btn-ghost-light btn-sm" style="color:#ffd166;">Public Site ↗</a>
+    </div>
+  </div>
+</header>
+
+<main class="admin-main">
+  <!-- Top Hospital Switcher Filter -->
+  <div class="hosp-tabs-wrap" id="hospitalTabs">
+    <button class="hosp-tab-btn active" data-hosp="ALL">
+      <span>All 6 Hospitals Overview</span>
+      <span class="badge-count" id="badgeAllCount">0</span>
+    </button>
+    <button class="hosp-tab-btn" data-hosp="Apollo Hospitals · Seshadripuram">
+      <span>Apollo Hospitals (Seshadripuram)</span>
+      <span class="badge-count" id="badgeApolloCount">0</span>
+    </button>
+    <button class="hosp-tab-btn" data-hosp="Fortis Hospital · Cunningham Road, Vasanth Nagar">
+      <span>Fortis Hospital (Cunningham Rd)</span>
+      <span class="badge-count" id="badgeFortisCount">0</span>
+    </button>
+    <button class="hosp-tab-btn" data-hosp="Aster CMI Hospital · Hebbal, Sahakara Nagar">
+      <span>Aster CMI (Hebbal)</span>
+      <span class="badge-count" id="badgeAsterCount">0</span>
+    </button>
+    <button class="hosp-tab-btn" data-hosp="Manipal Hospitals · Old Airport Road, Kodihalli">
+      <span>Manipal (Old Airport Rd)</span>
+      <span class="badge-count" id="badgeManipalCount">0</span>
+    </button>
+    <button class="hosp-tab-btn" data-hosp="Narayana Health City · Bommasandra">
+      <span>Narayana Health City</span>
+      <span class="badge-count" id="badgeNarayanaCount">0</span>
+    </button>
+    <button class="hosp-tab-btn" data-hosp="Manipal Hospitals Sarjapur Road · Bellandur, Sarjapur Road">
+      <span>Manipal (Sarjapur Rd)</span>
+      <span class="badge-count" id="badgeSarjapurCount">0</span>
+    </button>
+  </div>
+
+  <!-- Selected Hospital Banner -->
+  <div style="background:var(--admin-card);border:1px solid var(--admin-line);border-radius:18px;padding:1.4rem 1.8rem;margin-bottom:2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+    <div>
+      <span style="font-size:0.68rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--admin-gold);font-weight:700;">Active Centre Desk</span>
+      <h1 style="font-family:'Fraunces',serif;font-size:1.65rem;color:#fff;margin-top:0.2rem;" id="activeHospTitle">Bengaluru Network Overview (All 6 Centres)</h1>
+      <p style="font-size:0.8rem;color:rgba(250,245,239,0.55);margin-top:0.25rem;" id="activeHospSubtitle">Centralized donor arrival monitoring, NBTC cooling period enforcement, and blood inventory ledger.</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(52,211,153,0.14);border:1px solid rgba(52,211,153,0.35);color:#6ee7b7;padding:0.4rem 0.9rem;border-radius:99px;font-size:0.72rem;font-weight:700;">
+        <span style="width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399;"></span>
+        Supabase Live Sync
+      </span>
+      <button class="btn btn-ghost-light btn-sm" id="btnRefreshData" title="Refresh Live Data">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        <span>Refresh</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card alert-card">
+      <div class="kpi-title">Inbound Donors En Route</div>
+      <div class="kpi-value" id="kpiEnRoute">0</div>
+      <div class="kpi-sub">Accepted requisitions heading to blood bank</div>
+    </div>
+    <div class="kpi-card gold-card">
+      <div class="kpi-title">At Hospital (Pre-Screening)</div>
+      <div class="kpi-value" id="kpiArrived">0</div>
+      <div class="kpi-sub">Arrived at desk & awaiting donation</div>
+    </div>
+    <div class="kpi-card green-card">
+      <div class="kpi-title">Units Collected Today</div>
+      <div class="kpi-value" id="kpiCompleted">0</div>
+      <div class="kpi-sub">Donations finalized & donor profile synced</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">Active Requisitions</div>
+      <div class="kpi-value" id="kpiRequisitions">6</div>
+      <div class="kpi-sub">Broadcasting across Karnataka network</div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: LIVE DONOR ARRIVAL & CHECK-IN DESK -->
+  <div class="admin-sec-head">
+    <div>
+      <div class="admin-sec-title">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--admin-gold)" stroke-width="2.2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        <span>Live Donor Arrival & Check-In Desk</span>
+      </div>
+      <p style="font-size:0.78rem;color:rgba(250,245,239,0.55);margin-top:0.25rem;">
+        When donors accept requests, their dispatch ticket appears here. Mark their arrival, then verify & complete the donation to update their profile and enforce the 90-day waiting period.
+      </p>
+    </div>
+    <div style="font-size:0.75rem;color:var(--admin-gold);display:flex;align-items:center;gap:6px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      NBTC 90-Day Waiting Period Lock Enforced
+    </div>
+  </div>
+
+  <div class="arrival-table-wrap">
+    <table class="arrival-table">
+      <thead>
+        <tr>
+          <th>Donor Details</th>
+          <th>Blood Group</th>
+          <th>Target Hospital & Requisition</th>
+          <th>Contact & ETA</th>
+          <th>Status</th>
+          <th style="text-align:right;">Admin Actions</th>
+        </tr>
+      </thead>
+      <tbody id="arrivalsTableBody">
+        <!-- Rendered dynamically by admin.js -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SECTION 2: HOSPITAL BLOOD INVENTORY -->
+  <div class="admin-sec-head">
+    <div>
+      <div class="admin-sec-title">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e5383b" stroke-width="2.2" stroke-linecap="round"><path d="M12 2C9.5 8 5 11.5 5 16a7 7 0 0 0 14 0c0-4.5-4.5-8-7-14z"/></svg>
+        <span>Hospital Blood Bank Reserves (Units on Hand)</span>
+      </div>
+      <p style="font-size:0.78rem;color:rgba(250,245,239,0.55);margin-top:0.25rem;">
+        Real-time cold-chain inventory. Collected donations automatically increment units.
+      </p>
+    </div>
+    <span style="font-size:0.72rem;color:rgba(250,245,239,0.45);">Target: min 15 units / type</span>
+  </div>
+
+  <div class="inventory-grid" id="inventoryGrid">
+    <!-- Rendered dynamically -->
+  </div>
+
+  <!-- SECTION 3: EMERGENCY REQUISITION BROADCASTS -->
+  <div class="admin-sec-head">
+    <div>
+      <div class="admin-sec-title">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff4d6d" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>Active Emergency Requisition Broadcasts</span>
+      </div>
+      <p style="font-size:0.78rem;color:rgba(250,245,239,0.55);margin-top:0.25rem;">
+        Requisitions broadcasted here appear immediately on the public Live Emergency Feed for compatible donors.
+      </p>
+    </div>
+    <button class="btn btn-primary btn-sm" id="btnBroadcastSecondary">
+      + New Broadcast
+    </button>
+  </div>
+
+  <div class="arrival-table-wrap">
+    <table class="arrival-table">
+      <thead>
+        <tr>
+          <th>Requisition ID</th>
+          <th>Hospital & Location</th>
+          <th>Required Type</th>
+          <th>Urgency</th>
+          <th>Units Needed</th>
+          <th>Status</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="requisitionsTableBody">
+        <!-- Rendered dynamically -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SECTION 4: REGISTERED DONOR REGISTRY & COMPLIANCE -->
+  <div class="admin-sec-head">
+    <div>
+      <div class="admin-sec-title">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--admin-gold)" stroke-width="2.2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span>Registered Donor Registry & Regulatory Waiting Period Status</span>
+      </div>
+      <p style="font-size:0.78rem;color:rgba(250,245,239,0.55);margin-top:0.25rem;">
+        Live sync with Supabase <code>public.profiles</code>. Shows which donors are legally eligible vs. resting in the 90-day cooling period.
+      </p>
+    </div>
+    <div>
+      <input type="text" id="donorSearchInput" placeholder="Search by name, email, or blood type..." style="background:rgba(255,255,255,0.06);border:1px solid var(--admin-line);color:#fff;padding:0.45rem 0.9rem;border-radius:10px;font-size:0.8rem;width:260px;">
+    </div>
+  </div>
+
+  <div class="arrival-table-wrap">
+    <table class="arrival-table">
+      <thead>
+        <tr>
+          <th>Donor Name & ID</th>
+          <th>Blood Group</th>
+          <th>City / Phone</th>
+          <th>Total Donations</th>
+          <th>Last Donation Date</th>
+          <th>Legal Status (90-Day Rule)</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="donorRegistryTableBody">
+        <!-- Rendered dynamically -->
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<!-- BROADCAST REQUISITION MODAL -->
+<div class="admin-modal-overlay" id="broadcastModal">
+  <div class="admin-modal">
+    <div class="admin-modal-head">
+      <h3>Broadcast Requisition</h3>
+      <button class="close-modal-btn" data-close-modal>&times;</button>
+    </div>
+    <form id="broadcastReqForm">
+      <div style="margin-bottom:1rem;">
+        <label style="display:block;font-size:0.75rem;font-weight:700;color:rgba(250,245,239,0.7);margin-bottom:0.4rem;">Select Hospital</label>
+        <select id="modalHospitalSelect" style="width:100%;padding:0.65rem;border-radius:10px;background:#261b19;border:1px solid var(--admin-line);color:#fff;font-family:'Inter',sans-serif;" required>
+          <option value="Apollo Hospitals · Seshadripuram">Apollo Hospitals — Seshadripuram</option>
+          <option value="Fortis Hospital · Cunningham Road, Vasanth Nagar">Fortis Hospital — Cunningham Road, Vasanth Nagar</option>
+          <option value="Aster CMI Hospital · Hebbal, Sahakara Nagar">Aster CMI Hospital — Hebbal, Sahakara Nagar</option>
+          <option value="Manipal Hospitals · Old Airport Road, Kodihalli">Manipal Hospitals — Old Airport Road, Kodihalli</option>
+          <option value="Narayana Health City · Bommasandra">Narayana Health City — Bommasandra</option>
+          <option value="Manipal Hospitals Sarjapur Road · Bellandur, Sarjapur Road">Manipal Hospitals Sarjapur Road — Bellandur, Sarjapur Road</option>
+        </select>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1rem;">
+        <div>
+          <label style="display:block;font-size:0.75rem;font-weight:700;color:rgba(250,245,239,0.7);margin-bottom:0.4rem;">Blood Group Needed</label>
+          <select id="modalBloodGroup" style="width:100%;padding:0.65rem;border-radius:10px;background:#261b19;border:1px solid var(--admin-line);color:#fff;font-family:'Inter',sans-serif;" required>
+            <option value="O-">O− (Universal Red Cell)</option>
+            <option value="O+">O+</option>
+            <option value="A-">A−</option>
+            <option value="A+">A+</option>
+            <option value="B-">B−</option>
+            <option value="B+">B+</option>
+            <option value="AB-">AB−</option>
+            <option value="AB+">AB+</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.75rem;font-weight:700;color:rgba(250,245,239,0.7);margin-bottom:0.4rem;">Urgency Level</label>
+          <select id="modalUrgency" style="width:100%;padding:0.65rem;border-radius:10px;background:#261b19;border:1px solid var(--admin-line);color:#fff;font-family:'Inter',sans-serif;" required>
+            <option value="Critical">Critical (Immediate Surgery)</option>
+            <option value="Urgent">Urgent (Within 4 Hours)</option>
+            <option value="Stable">Stable (Scheduled Transfusion)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1rem;">
+        <div>
+          <label style="display:block;font-size:0.75rem;font-weight:700;color:rgba(250,245,239,0.7);margin-bottom:0.4rem;">Units Required</label>
+          <input type="number" id="modalUnits" min="1" max="10" value="2" style="width:100%;padding:0.65rem;border-radius:10px;background:#261b19;border:1px solid var(--admin-line);color:#fff;" required>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.75rem;font-weight:700;color:rgba(250,245,239,0.7);margin-bottom:0.4rem;">Hospital Ward / Dept</label>
+          <input type="text" id="modalWard" value="Trauma ICU · Bed 4" style="width:100%;padding:0.65rem;border-radius:10px;background:#261b19;border:1px solid var(--admin-line);color:#fff;" required>
+        </div>
+      </div>
+
+      <div style="margin-bottom:1.4rem;">
+        <label style="display:block;font-size:0.75rem;font-weight:700;color:rgba(250,245,239,0.7);margin-bottom:0.4rem;">Clinical Notes</label>
+        <textarea id="modalNotes" rows="2" style="width:100%;padding:0.65rem;border-radius:10px;background:#261b19;border:1px solid var(--admin-line);color:#fff;font-family:'Inter',sans-serif;">Emergency requisition dispatched by blood bank duty officer.</textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" style="padding:0.8rem;">
+        Broadcast Requisition to Network &rarr;
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- COMPLETE DONATION CONFIRMATION MODAL -->
+<div class="admin-modal-overlay" id="completeDonationModal">
+  <div class="admin-modal">
+    <div class="admin-modal-head">
+      <h3>Complete Blood Donation</h3>
+      <button class="close-modal-btn" data-close-modal>&times;</button>
+    </div>
+    <div style="margin-bottom:1.4rem;background:rgba(255,255,255,0.04);border:1px solid var(--admin-line);border-radius:14px;padding:1.2rem;">
+      <div style="font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--admin-gold);font-weight:700;">Donor Verification & Clinical Intake</div>
+      <div style="font-size:1.15rem;font-weight:800;color:#fff;margin-top:0.4rem;" id="modalDonorName">Chiranth (AB+)</div>
+      <div style="font-size:0.8rem;color:rgba(250,245,239,0.6);" id="modalDonorDetails">Donor ID: VT-IN-2026-0921 · Apollo Hospitals Seshadripuram</div>
+    </div>
+
+    <form id="finalizeDonationForm">
+      <input type="hidden" id="modalTicketId">
+      <input type="hidden" id="modalDonorEmail">
+      <input type="hidden" id="modalDonorId">
+      <input type="hidden" id="modalHospitalName">
+      <input type="hidden" id="modalBloodGroupVal">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1rem;">
+        <div>
+          <label style="display:block;font-size:0.75rem;font-weight:700;color:rgba(250,245,239,0.7);margin-bottom:0.4rem;">Hemoglobin (g/dL)</label>
+          <input type="number" id="modalHb" step="0.1" value="14.2" min="12.5" max="20" style="width:100%;padding:0.65rem;border-radius:10px;background:#261b19;border:1px solid var(--admin-line);color:#fff;" required>
+          <small style="font-size:0.65rem;color:#34d399;">Min 12.5 g/dL (NBTC standard)</small>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.75rem;font-weight:700;color:rgba(250,245,239,0.7);margin-bottom:0.4rem;">Component Collected</label>
+          <select id="modalComponent" style="width:100%;padding:0.65rem;border-radius:10px;background:#261b19;border:1px solid var(--admin-line);color:#fff;font-family:'Inter',sans-serif;">
+            <option value="Whole Blood · 350 ml">Whole Blood (350 ml)</option>
+            <option value="Whole Blood · 450 ml">Whole Blood (450 ml)</option>
+            <option value="Platelets · Apheresis">Platelets (Apheresis)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:0.9rem;margin-bottom:1.4rem;">
+        <div style="font-size:0.75rem;font-weight:700;color:#fca5a5;margin-bottom:0.25rem;">
+          Mandatory 90-Day Waiting Period Lock
+        </div>
+        <p style="font-size:0.72rem;color:rgba(250,245,239,0.75);line-height:1.45;">
+          Confirming this collection will update the donor's profile in Supabase, increment their life-saving count (+1 donation, +3 lives), and <b>lock them from accepting any new donations for exactly 90 days</b> under NBTC regulatory standards.
+        </p>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" style="background:#10b981;border-color:#10b981;padding:0.85rem;font-weight:700;">
+        Confirm Collection & Lock 90-Day Period &rarr;
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastWrap" class="toast-wrap" aria-live="polite"></div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
