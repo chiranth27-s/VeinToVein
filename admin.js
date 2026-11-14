@@ -773,8 +773,8 @@ function renderDonorRegistryRows(donors) {
     return `
       <tr>
         <td>
-          <div style="font-weight:700;color:#fff;">${d.full_name || 'Donor'}</div>
-          <div style="font-size:0.72rem;color:rgba(250,245,239,0.5);">ID: <b style="color:var(--admin-gold);">${d.donor_id || 'VT-IN-2026-PENDING'}</b> · ${d.email || ''}</div>
+          <div style="font-weight:700;color:#fff;cursor:pointer;" onclick="openDonorDetailsModal('${d.donor_id || d.email}')" title="Click to view full user details">${d.full_name || 'Donor'}</div>
+          <div style="font-size:0.72rem;color:rgba(250,245,239,0.5);">ID: <b style="color:var(--admin-gold);cursor:pointer;" onclick="openDonorDetailsModal('${d.donor_id || d.email}')">${d.donor_id || 'VT-IN-2026-PENDING'}</b> · ${d.email || ''}</div>
         </td>
         <td><b style="font-size:1.05rem;color:#fff;">${d.blood_group || 'O+'}</b></td>
         <td>
@@ -786,13 +786,130 @@ function renderDonorRegistryRows(donors) {
           <div>${d.last_donation ? eligibility.lastDateStr : 'Data Not Available'}</div>
         </td>
         <td>${statusPill}</td>
-        <td style="text-align:right;">
+        <td style="text-align:right;white-space:nowrap;">
+          <button class="btn-sm-action" onclick="openDonorDetailsModal('${d.donor_id || d.email}')" style="background:rgba(255,255,255,0.08);color:#ffd166;margin-right:6px;" title="View all user details & credentials">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:middle;margin-right:3px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>Details</span>
+          </button>
           ${actionBtn}
         </td>
       </tr>
     `;
   }).join('');
 }
+
+// ── Open Donor Full Details Modal ──
+let isPasswordRevealed = false;
+
+window.openDonorDetailsModal = function (donorKey) {
+  if (!donorKey) return;
+  const d = (activeDonorsCache || []).find(donor =>
+    (donor.donor_id && donor.donor_id === donorKey) ||
+    (donor.email && donor.email.toLowerCase() === donorKey.toLowerCase()) ||
+    (donor.id && donor.id === donorKey)
+  );
+  if (!d) return;
+
+  isPasswordRevealed = false;
+  const eligibility = calculateLegalEligibility(d.last_donation);
+
+  // Populate basic info
+  const badgeEl = document.getElementById('ddBloodBadge');
+  if (badgeEl) badgeEl.textContent = d.blood_group || 'O+';
+  const nameEl = document.getElementById('ddFullName');
+  if (nameEl) nameEl.textContent = d.full_name || 'Donor';
+  const idEl = document.getElementById('ddDonorId');
+  if (idEl) idEl.textContent = d.donor_id || 'VT-IN-2026-PENDING';
+
+  // Stats
+  const donCount = (d.donations_count !== undefined && d.donations_count !== null) ? d.donations_count : 0;
+  const livesCount = (d.lives_impacted !== undefined && d.lives_impacted !== null) ? d.lives_impacted : (donCount * 3);
+  const points = (d.impact_points !== undefined && d.impact_points !== null) ? d.impact_points : 50;
+  const tier = d.tier || (donCount >= 5 ? 'Gold' : (donCount >= 2 ? 'Silver' : 'Bronze'));
+
+  const countEl = document.getElementById('ddDonationsCount');
+  if (countEl) countEl.textContent = donCount;
+  const livesEl = document.getElementById('ddLivesSaved');
+  if (livesEl) livesEl.textContent = livesCount;
+  const tierEl = document.getElementById('ddPointsTier');
+  if (tierEl) tierEl.textContent = `${points} pts · ${tier}`;
+
+  // Contact & credentials
+  const emailEl = document.getElementById('ddEmail');
+  if (emailEl) emailEl.textContent = d.email || '—';
+  const phoneEl = document.getElementById('ddPhone');
+  if (phoneEl) phoneEl.textContent = d.phone || '—';
+  const cityEl = document.getElementById('ddCity');
+  if (cityEl) cityEl.textContent = d.city || 'Bengaluru';
+  const lastEl = document.getElementById('ddLastDate');
+  if (lastEl) lastEl.textContent = d.last_donation ? eligibility.lastDateStr : 'Data Not Available';
+  const kycEl = document.getElementById('ddKycStatus');
+  if (kycEl) kycEl.textContent = d.kyc_verified !== false ? '✓ Verified Donor' : 'Pending Verification';
+
+  // Password display & toggle
+  const passEl = document.getElementById('ddPassword');
+  const toggleBtn = document.getElementById('btnTogglePassVisibility');
+  const rawPass = d.password || '';
+
+  if (passEl) {
+    if (!rawPass) {
+      passEl.textContent = 'Encrypted (Supabase Auth)';
+      passEl.style.color = 'rgba(250,245,239,0.45)';
+      if (toggleBtn) toggleBtn.style.display = 'none';
+    } else {
+      passEl.textContent = '••••••••';
+      passEl.style.color = '#ffd166';
+      if (toggleBtn) {
+        toggleBtn.style.display = 'inline';
+        toggleBtn.textContent = 'Show';
+        toggleBtn.onclick = () => {
+          isPasswordRevealed = !isPasswordRevealed;
+          passEl.textContent = isPasswordRevealed ? rawPass : '••••••••';
+          toggleBtn.textContent = isPasswordRevealed ? 'Hide' : 'Show';
+        };
+      }
+    }
+  }
+
+  // Regulatory NBTC Box
+  const regBox = document.getElementById('ddRegulatoryBox');
+  const regTitle = document.getElementById('ddRegStatusTitle');
+  const regDesc = document.getElementById('ddRegStatusDesc');
+  const dispatchBtn = document.getElementById('btnModalSimulateDispatch');
+
+  if (regBox && regTitle && regDesc) {
+    if (eligibility.eligible) {
+      regBox.style.background = 'rgba(52,211,153,0.1)';
+      regBox.style.borderColor = 'rgba(52,211,153,0.25)';
+      regTitle.style.color = '#6ee7b7';
+      regTitle.textContent = '✓ Legally Eligible to Donate';
+      regDesc.textContent = `Donor has completed all recovery windows and is ready for clinical intake. Last recorded: ${d.last_donation ? eligibility.lastDateStr : 'No prior donations recorded'}.`;
+      if (dispatchBtn) {
+        dispatchBtn.disabled = false;
+        dispatchBtn.style.opacity = '1';
+        dispatchBtn.style.cursor = 'pointer';
+        dispatchBtn.onclick = () => {
+          document.getElementById('donorDetailsModal').classList.remove('open');
+          simulateDispatchForDonor(d.donor_id || d.email, d.full_name, d.blood_group, d.phone, d.email);
+        };
+      }
+    } else {
+      regBox.style.background = 'rgba(239,68,68,0.12)';
+      regBox.style.borderColor = 'rgba(239,68,68,0.3)';
+      regTitle.style.color = '#fca5a5';
+      regTitle.textContent = `🔒 90-Day NBTC Cooling Period Active (${eligibility.daysRemaining} days left)`;
+      regDesc.textContent = `Donor donated on ${eligibility.lastDateStr} and must rest until ${eligibility.nextDate} before donating whole blood again.`;
+      if (dispatchBtn) {
+        dispatchBtn.disabled = true;
+        dispatchBtn.style.opacity = '0.5';
+        dispatchBtn.style.cursor = 'not-allowed';
+        dispatchBtn.onclick = null;
+      }
+    }
+  }
+
+  document.getElementById('donorDetailsModal')?.classList.add('open');
+};
 
 // ────────────────────────────────────────────────────────────
 // SIMULATE TEST ARRIVAL FOR INSTANT LIVE TESTING

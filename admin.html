@@ -466,7 +466,10 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         <span>Test Donor Arrival</span>
       </button>
-      <a href="profile.html" class="btn btn-ghost-light btn-sm">Donor Passport</a>
+      <button class="btn btn-ghost-light btn-sm" id="btnNavDonorRegistry" onclick="document.getElementById('donorRegistrySection').scrollIntoView({ behavior: 'smooth' })">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Donor Registry</span>
+      </button>
       <a href="index.html" class="btn btn-ghost-light btn-sm" style="color:#ffd166;">Public Site ↗</a>
     </div>
   </div>
@@ -637,7 +640,7 @@
   </div>
 
   <!-- SECTION 4: REGISTERED DONOR REGISTRY & COMPLIANCE -->
-  <div class="admin-sec-head">
+  <div class="admin-sec-head" id="donorRegistrySection" style="scroll-margin-top:80px;">
     <div>
       <div class="admin-sec-title">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--admin-gold)" stroke-width="2.2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
@@ -788,6 +791,89 @@
         Confirm Collection & Lock 90-Day Period &rarr;
       </button>
     </form>
+  </div>
+</div>
+
+<!-- DONOR FULL DETAILS MODAL -->
+<div class="admin-modal-overlay" id="donorDetailsModal">
+  <div class="admin-modal" style="max-width:540px;">
+    <div class="admin-modal-head">
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <span class="donor-badge-grp" id="ddBloodBadge" style="width:38px;height:38px;font-size:0.95rem;">O+</span>
+        <div>
+          <h3 id="ddFullName" style="font-size:1.15rem;margin:0;color:#fff;">Donor Name</h3>
+          <span style="font-size:0.75rem;color:var(--admin-gold);font-weight:700;" id="ddDonorId">VT-IN-2026-00000</span>
+        </div>
+      </div>
+      <button class="close-modal-btn" data-close-modal>&times;</button>
+    </div>
+
+    <div style="padding:1.4rem;">
+      <!-- Key Stats Bar -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;background:rgba(255,255,255,0.04);border:1px solid var(--admin-line);border-radius:12px;padding:0.8rem;text-align:center;margin-bottom:1.2rem;">
+        <div>
+          <div style="font-size:0.65rem;color:rgba(250,245,239,0.5);text-transform:uppercase;letter-spacing:0.05em;">Donations</div>
+          <div style="font-size:1.15rem;font-weight:800;color:#fff;margin-top:2px;" id="ddDonationsCount">0</div>
+        </div>
+        <div>
+          <div style="font-size:0.65rem;color:rgba(250,245,239,0.5);text-transform:uppercase;letter-spacing:0.05em;">Lives Saved</div>
+          <div style="font-size:1.15rem;font-weight:800;color:#34d399;margin-top:2px;" id="ddLivesSaved">0</div>
+        </div>
+        <div>
+          <div style="font-size:0.65rem;color:rgba(250,245,239,0.5);text-transform:uppercase;letter-spacing:0.05em;">Points / Tier</div>
+          <div style="font-size:0.88rem;font-weight:800;color:var(--admin-gold);margin-top:4px;" id="ddPointsTier">50 pts · Bronze</div>
+        </div>
+      </div>
+
+      <!-- User Information Grid -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1.2rem;">
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:0.7rem 0.85rem;">
+          <div style="font-size:0.68rem;color:rgba(250,245,239,0.5);margin-bottom:2px;">Email Address</div>
+          <div style="font-size:0.82rem;color:#fff;font-weight:600;word-break:break-all;" id="ddEmail">—</div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:0.7rem 0.85rem;">
+          <div style="font-size:0.68rem;color:rgba(250,245,239,0.5);margin-bottom:2px;display:flex;justify-content:space-between;align-items:center;">
+            <span>Password</span>
+            <button type="button" id="btnTogglePassVisibility" style="background:none;border:none;color:var(--admin-gold);cursor:pointer;font-size:0.68rem;padding:0;text-decoration:underline;">Show</button>
+          </div>
+          <div style="font-size:0.82rem;color:#ffd166;font-family:monospace;font-weight:600;" id="ddPassword">••••••••</div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:0.7rem 0.85rem;">
+          <div style="font-size:0.68rem;color:rgba(250,245,239,0.5);margin-bottom:2px;">Phone Number</div>
+          <div style="font-size:0.82rem;color:#fff;font-weight:600;" id="ddPhone">—</div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:0.7rem 0.85rem;">
+          <div style="font-size:0.68rem;color:rgba(250,245,239,0.5);margin-bottom:2px;">City / Region</div>
+          <div style="font-size:0.82rem;color:#fff;font-weight:600;" id="ddCity">—</div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:0.7rem 0.85rem;">
+          <div style="font-size:0.68rem;color:rgba(250,245,239,0.5);margin-bottom:2px;">Last Donated Date</div>
+          <div style="font-size:0.82rem;color:#fff;font-weight:600;" id="ddLastDate">Data Not Available</div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:0.7rem 0.85rem;">
+          <div style="font-size:0.68rem;color:rgba(250,245,239,0.5);margin-bottom:2px;">KYC Status</div>
+          <div style="font-size:0.82rem;color:#34d399;font-weight:600;" id="ddKycStatus">✓ Verified Donor</div>
+        </div>
+      </div>
+
+      <!-- Regulatory Status Box -->
+      <div id="ddRegulatoryBox" style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);border-radius:10px;padding:0.8rem;margin-bottom:1.2rem;">
+        <div style="font-size:0.72rem;font-weight:700;color:#6ee7b7;margin-bottom:2px;" id="ddRegStatusTitle">✓ Eligible to Donate Whole Blood</div>
+        <div style="font-size:0.72rem;color:rgba(250,245,239,0.7);" id="ddRegStatusDesc">Donor is ready for emergency dispatch matching their blood type.</div>
+      </div>
+
+      <div style="display:flex;gap:0.6rem;justify-content:flex-end;">
+        <button type="button" class="btn btn-ghost-light btn-sm" data-close-modal style="padding:0.6rem 1.2rem;">Close</button>
+        <button type="button" class="btn btn-primary btn-sm" id="btnModalSimulateDispatch" style="padding:0.6rem 1.2rem;">
+          Simulate Arrival &rarr;
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 

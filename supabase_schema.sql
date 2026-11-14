@@ -12,6 +12,7 @@
 create table if not exists public.profiles (
   id uuid references auth.users on delete cascade primary key,
   email text,
+  password text,
   full_name text,
   phone text,
   blood_group text,
@@ -26,6 +27,9 @@ create table if not exists public.profiles (
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
+
+-- Ensure password column exists on existing installations
+alter table public.profiles add column if not exists password text;
 
 -- 2. Enable Row Level Security (RLS)
 alter table public.profiles enable row level security;
@@ -69,6 +73,7 @@ begin
   insert into public.profiles (
     id,
     email,
+    password,
     full_name,
     phone,
     blood_group,
@@ -82,6 +87,7 @@ begin
   values (
     new.id,
     new.email,
+    coalesce(new.raw_user_meta_data->>'password', ''),
     coalesce(new.raw_user_meta_data->>'full_name', 'Donor'),
     coalesce(new.raw_user_meta_data->>'phone', ''),
     coalesce(new.raw_user_meta_data->>'blood_group', 'O+'),
@@ -93,6 +99,7 @@ begin
     coalesce((new.raw_user_meta_data->>'impact_points')::integer, 50)
   )
   on conflict (id) do update set
+    password = coalesce(excluded.password, public.profiles.password),
     full_name = excluded.full_name,
     phone = excluded.phone,
     blood_group = excluded.blood_group,
