@@ -230,11 +230,11 @@ function parseSafeDate(str) {
 
 function checkLegalWaitingPeriod(lastDonationStr) {
   if (!lastDonationStr) {
-    return { eligible: true, daysElapsed: null, daysRemaining: 0, nextDate: 'Eligible Today', lastDateStr: 'Never Donated' };
+    return { eligible: true, daysElapsed: null, daysRemaining: 0, nextDate: 'Eligible Today', lastDateStr: 'Data Not Available' };
   }
   const lastTime = parseSafeDate(lastDonationStr);
   if (!lastTime) {
-    return { eligible: true, daysElapsed: null, daysRemaining: 0, nextDate: 'Eligible Today', lastDateStr: 'Unknown' };
+    return { eligible: true, daysElapsed: null, daysRemaining: 0, nextDate: 'Eligible Today', lastDateStr: 'Data Not Available' };
   }
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
@@ -616,13 +616,17 @@ async function signUpDonor({ email, password, fullName, phone, bloodGroup, city,
   if (!sb) throw new Error('Supabase client is not available.');
 
   const donorId = generateDonorId();
+  const safeLastDonation = (lastDonation && lastDonation !== 'never' && lastDonation.trim() !== '') ? lastDonation : null;
   const metadata = {
     full_name: fullName,
     phone: phone,
     blood_group: bloodGroup,
     city: city,
-    last_donation: lastDonation || null,
+    last_donation: safeLastDonation,
     donor_id: donorId,
+    donations_count: 0,
+    lives_impacted: 0,
+    impact_points: 50,
     created_at: new Date().toISOString()
   };
 
@@ -648,8 +652,11 @@ async function signUpDonor({ email, password, fullName, phone, bloodGroup, city,
       phone: phone,
       blood_group: bloodGroup,
       city: city,
-      last_donation: lastDonation || null,
+      last_donation: safeLastDonation,
       donor_id: donorId,
+      donations_count: 0,
+      lives_impacted: 0,
+      impact_points: 50,
       updated_at: new Date().toISOString()
     };
 
@@ -711,7 +718,10 @@ async function signInDonor({ email, password }) {
         blood_group: meta.blood_group || 'O+',
         city: meta.city || 'India',
         last_donation: meta.last_donation || null,
-        donor_id: meta.donor_id || generateDonorId()
+        donor_id: meta.donor_id || generateDonorId(),
+        donations_count: meta.donations_count !== undefined ? meta.donations_count : 0,
+        lives_impacted: meta.lives_impacted !== undefined ? meta.lives_impacted : 0,
+        impact_points: meta.impact_points !== undefined ? meta.impact_points : 50
       };
     }
 

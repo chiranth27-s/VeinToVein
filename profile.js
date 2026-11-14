@@ -143,14 +143,15 @@ async function syncProfileWithSupabase() {
       if (cardGroupEl) cardGroupEl.innerHTML = `${p.blood_group || 'O+'}<small>Blood Group</small>`;
 
       // Update Impact Numbers
+      const donCount = (p.donations_count !== undefined && p.donations_count !== null) ? p.donations_count : 0;
       const donCountEl = document.getElementById('profileDonationsCount');
-      if (donCountEl) donCountEl.textContent = p.donations_count || 1;
+      if (donCountEl) donCountEl.textContent = donCount;
 
       const livesEl = document.getElementById('profileLivesImpacted');
-      if (livesEl) livesEl.textContent = p.lives_impacted || (p.donations_count ? p.donations_count * 3 : 3);
+      if (livesEl) livesEl.textContent = (p.lives_impacted !== undefined && p.lives_impacted !== null) ? p.lives_impacted : (donCount * 3);
 
       const ptsEl = document.getElementById('profilePoints');
-      if (ptsEl) ptsEl.textContent = (p.impact_points || 250).toLocaleString();
+      if (ptsEl) ptsEl.textContent = (p.impact_points !== undefined && p.impact_points !== null ? p.impact_points : 50).toLocaleString();
 
       // Update Last Donation & Next Eligible Date (NBTC 90-day waiting period)
       const statLast = document.getElementById('statLastDonation');
@@ -161,7 +162,7 @@ async function syncProfileWithSupabase() {
       const eligibility = typeof checkLegalWaitingPeriod === 'function'
         ? checkLegalWaitingPeriod(p.last_donation)
         : (function () {
-            if (!p.last_donation) return { eligible: true, daysRemaining: 0, nextDate: 'Eligible Today', lastDateStr: 'Ready' };
+            if (!p.last_donation) return { eligible: true, daysRemaining: 0, nextDate: 'Eligible Today', lastDateStr: 'Data Not Available' };
             const match = String(p.last_donation).match(/^(\d{4})-(\d{2})-(\d{2})/);
             const d = match ? new Date(parseInt(match[1], 10), parseInt(match[2], 10) - 1, parseInt(match[3], 10), 0, 0, 0, 0) : new Date(p.last_donation);
             const now = new Date();
@@ -186,7 +187,7 @@ async function syncProfileWithSupabase() {
           passChip.style.color = '#fca5a5';
         }
       } else {
-        if (statLast) statLast.textContent = p.last_donation ? `${eligibility.lastDateStr} · Verified Lab` : 'Ready for 1st Donation';
+        if (statLast) statLast.textContent = p.last_donation ? `${eligibility.lastDateStr} · Verified Lab` : 'Data Not Available';
         if (statNext) statNext.textContent = 'Eligible today (whole blood)';
         if (passText) passText.textContent = 'ELIGIBILITY PASSPORT ACTIVE · ELIGIBLE NOW';
         if (passChip) {

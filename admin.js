@@ -123,11 +123,11 @@ function parseSafeDate(str) {
 // ── Calculate 90-Day NBTC Legal Waiting Period ──
 function calculateLegalEligibility(lastDonationStr) {
   if (!lastDonationStr) {
-    return { eligible: true, daysElapsed: null, daysRemaining: 0, nextDate: 'Eligible Today', lastDateStr: 'Never Donated' };
+    return { eligible: true, daysElapsed: null, daysRemaining: 0, nextDate: 'Eligible Today', lastDateStr: 'Data Not Available' };
   }
   const lastTime = parseSafeDate(lastDonationStr);
   if (!lastTime) {
-    return { eligible: true, daysElapsed: null, daysRemaining: 0, nextDate: 'Eligible Today', lastDateStr: 'Unknown' };
+    return { eligible: true, daysElapsed: null, daysRemaining: 0, nextDate: 'Eligible Today', lastDateStr: 'Data Not Available' };
   }
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
@@ -465,9 +465,9 @@ document.getElementById('finalizeDonationForm')?.addEventListener('submit', asyn
     // Always update cached profile in localStorage if matches or current user
     if (currentProfile) {
       currentProfile.last_donation = todayStr;
-      currentProfile.donations_count = (currentProfile.donations_count || 1) + 1;
-      currentProfile.lives_impacted = (currentProfile.lives_impacted || 3) + 3;
-      currentProfile.impact_points = (currentProfile.impact_points || 100) + 150;
+      currentProfile.donations_count = (currentProfile.donations_count || 0) + 1;
+      currentProfile.lives_impacted = (currentProfile.lives_impacted || 0) + 3;
+      currentProfile.impact_points = (currentProfile.impact_points || 50) + 150;
       localStorage.setItem('vtv_donor_profile', JSON.stringify(currentProfile));
     }
 
@@ -724,7 +724,7 @@ async function loadAndRenderDonorRegistry() {
         const cDate = (cd.completedAt || cd.acceptedAt || '').split('T')[0];
         if (cDate && (!d.last_donation || cDate > d.last_donation)) {
           d.last_donation = cDate;
-          d.donations_count = Math.max(d.donations_count || 1, (d.donations_count || 0) + 1);
+          d.donations_count = (d.donations_count || 0) + 1;
         }
       });
     }
@@ -781,9 +781,9 @@ function renderDonorRegistryRows(donors) {
           <div>${d.city || 'Bengaluru'}</div>
           <div style="font-size:0.72rem;color:rgba(250,245,239,0.5);">${d.phone || '—'}</div>
         </td>
-        <td><b>${d.donations_count || 1}</b> donations</td>
+        <td><b>${d.donations_count !== undefined && d.donations_count !== null ? d.donations_count : 0}</b> donations</td>
         <td>
-          <div>${eligibility.lastDateStr}</div>
+          <div>${d.last_donation ? eligibility.lastDateStr : 'Data Not Available'}</div>
         </td>
         <td>${statusPill}</td>
         <td style="text-align:right;">

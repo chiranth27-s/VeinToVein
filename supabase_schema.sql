@@ -86,11 +86,11 @@ begin
     coalesce(new.raw_user_meta_data->>'phone', ''),
     coalesce(new.raw_user_meta_data->>'blood_group', 'O+'),
     coalesce(new.raw_user_meta_data->>'city', 'India'),
-    nullif(new.raw_user_meta_data->>'last_donation', '')::date,
+    nullif(nullif(new.raw_user_meta_data->>'last_donation', ''), 'never')::date,
     coalesce(new.raw_user_meta_data->>'donor_id', 'VT-IN-' || to_char(now(), 'YYYY') || '-' || floor(10000 + random() * 90000)::text),
-    1,
-    3,
-    100
+    coalesce((new.raw_user_meta_data->>'donations_count')::integer, 0),
+    coalesce((new.raw_user_meta_data->>'lives_impacted')::integer, 0),
+    coalesce((new.raw_user_meta_data->>'impact_points')::integer, 50)
   )
   on conflict (id) do update set
     full_name = excluded.full_name,
