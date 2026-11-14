@@ -144,3 +144,9 @@ alter table public.donations enable row level security;
 create policy "Allow public read on donations" on public.donations for select using (true);
 create policy "Allow insert on donations" on public.donations for insert with check (true);
 
+-- 7. RLS policies for `request_responses` table
+alter table if exists public.request_responses enable row level security;
+create policy "Allow insert on request_responses" on public.request_responses for insert with check (true);
+create policy "Allow select on request_responses" on public.request_responses for select using (true);
+
+
