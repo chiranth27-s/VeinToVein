@@ -103,27 +103,41 @@ function saveRequisitions(reqs) {
   } catch (e) {}
 }
 
+// ── Safe Calendar Date Parser (Prevents UTC timezone drift) ──
+function parseSafeDate(str) {
+  if (!str) return null;
+  if (typeof str === 'string') {
+    const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      const y = parseInt(match[1], 10);
+      const m = parseInt(match[2], 10) - 1;
+      const d = parseInt(match[3], 10);
+      return new Date(y, m, d, 0, 0, 0, 0);
+    }
+  }
+  const dt = new Date(str);
+  if (isNaN(dt.getTime())) return null;
+  return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), 0, 0, 0, 0);
+}
+
 // ── Calculate 90-Day NBTC Legal Waiting Period ──
 function calculateLegalEligibility(lastDonationStr) {
   if (!lastDonationStr) {
-    return { eligible: true, daysRemaining: 0, nextDate: 'Eligible Today', lastDateStr: 'Never Donated' };
+    return { eligible: true, daysElapsed: null, daysRemaining: 0, nextDate: 'Eligible Today', lastDateStr: 'Never Donated' };
   }
-  const lastDate = new Date(lastDonationStr);
-  if (isNaN(lastDate.getTime())) {
-    return { eligible: true, daysRemaining: 0, nextDate: 'Eligible Today', lastDateStr: 'Unknown' };
+  const lastTime = parseSafeDate(lastDonationStr);
+  if (!lastTime) {
+    return { eligible: true, daysElapsed: null, daysRemaining: 0, nextDate: 'Eligible Today', lastDateStr: 'Unknown' };
   }
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const lastTime = new Date(lastDate);
-  lastTime.setHours(0, 0, 0, 0);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
 
-  const diffDays = Math.floor((today - lastTime) / (1000 * 60 * 60 * 24));
+  const diffDays = Math.max(0, Math.floor((today.getTime() - lastTime.getTime()) / (1000 * 60 * 60 * 24)));
   const WAITING_PERIOD = 90; // Mandatory whole blood recovery interval
 
-  const nextDateObj = new Date(lastTime);
-  nextDateObj.setDate(nextDateObj.getDate() + WAITING_PERIOD);
+  const nextDateObj = new Date(lastTime.getFullYear(), lastTime.getMonth(), lastTime.getDate() + WAITING_PERIOD, 0, 0, 0, 0);
   const nextDateFormatted = nextDateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-  const lastDateFormatted = lastDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  const lastDateFormatted = lastTime.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
   if (diffDays >= WAITING_PERIOD) {
     return {
@@ -346,17 +360,33 @@ document.getElementById('finalizeDonationForm')?.addEventListener('submit', asyn
   const todayStr = new Date().toISOString().split('T')[0];
   const certId = `VT-CERT-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
 
-  // 1. Update dispatch ticket
+  // 1. Update dispatch ticket & clear any duplicate open tickets for this donor
   const dispatches = getDispatches();
   const ticket = dispatches.find(d => d.ticketId === ticketId);
+  const donorIdMatch = ticket ? ticket.donorId : donorId;
+  const donorEmailMatch = ticket ? ticket.email : donorEmail;
+
   if (ticket) {
     ticket.status = 'completed';
     ticket.completedAt = new Date().toISOString();
     ticket.hb = hb;
     ticket.component = component;
     ticket.certId = certId;
-    saveDispatches(dispatches);
   }
+
+  // Resolve any other open / duplicate dispatch tickets for this donor
+  dispatches.forEach(d => {
+    if (d.ticketId !== ticketId &&
+        ((donorIdMatch && d.donorId === donorIdMatch) ||
+         (donorEmailMatch && d.email && d.email.toLowerCase() === donorEmailMatch.toLowerCase()))) {
+      if (d.status === 'en_route' || d.status === 'arrived') {
+        d.status = 'completed';
+        d.completedAt = new Date().toISOString();
+        d.note = 'Resolved with finalized donation';
+      }
+    }
+  });
+  saveDispatches(dispatches);
 
   // 2. Increment hospital blood inventory
   const inv = getInventory();
@@ -371,6 +401,19 @@ document.getElementById('finalizeDonationForm')?.addEventListener('submit', asyn
     const rawLocal = localStorage.getItem('vtv_donor_profile');
     if (rawLocal) {
       try { currentProfile = JSON.parse(rawLocal); } catch (e) {}
+    }
+
+    // Update in-memory registry cache immediately
+    if (activeDonorsCache && activeDonorsCache.length > 0) {
+      const match = activeDonorsCache.find(d =>
+        (donorIdMatch && d.donor_id === donorIdMatch) ||
+        (donorEmailMatch && d.email && d.email.toLowerCase() === donorEmailMatch.toLowerCase())
+      );
+      if (match) {
+        match.last_donation = todayStr;
+        match.donations_count = (match.donations_count || 0) + 1;
+        match.lives_impacted = (match.lives_impacted || 0) + 3;
+      }
     }
 
     const sb = typeof getSupabase === 'function' ? getSupabase() : null;
@@ -668,6 +711,25 @@ async function loadAndRenderDonorRegistry() {
     );
   }
 
+  // Synchronize donor records with finalized dispatches
+  const dispatches = getDispatches();
+  donors.forEach(d => {
+    const completedList = dispatches.filter(dp =>
+      dp.status === 'completed' &&
+      ((d.donor_id && dp.donorId === d.donor_id) ||
+       (d.email && dp.email && dp.email.toLowerCase() === d.email.toLowerCase()))
+    );
+    if (completedList.length > 0) {
+      completedList.forEach(cd => {
+        const cDate = (cd.completedAt || cd.acceptedAt || '').split('T')[0];
+        if (cDate && (!d.last_donation || cDate > d.last_donation)) {
+          d.last_donation = cDate;
+          d.donations_count = Math.max(d.donations_count || 1, (d.donations_count || 0) + 1);
+        }
+      });
+    }
+  });
+
   activeDonorsCache = donors;
   renderDonorRegistryRows(donors);
 }
@@ -685,14 +747,26 @@ function renderDonorRegistryRows(donors) {
     const eligibility = calculateLegalEligibility(d.last_donation);
 
     let statusPill = '';
+    let actionBtn = '';
+
     if (eligibility.eligible) {
       statusPill = `<span class="status-pill status-completed">✓ Eligible Now</span>`;
+      actionBtn = `
+        <button class="btn-sm-action" onclick="simulateDispatchForDonor('${d.donor_id || d.email}', '${d.full_name}', '${d.blood_group}', '${d.phone}', '${d.email}')" style="background:rgba(255,255,255,0.06);color:#fff;">
+          Simulate Arrival
+        </button>
+      `;
     } else {
       statusPill = `
         <span class="status-pill status-cooling">
           🔒 Cooling (${eligibility.daysRemaining}d left)
         </span>
         <div style="font-size:0.68rem;color:rgba(250,245,239,0.5);margin-top:2px;">Eligible: ${eligibility.nextDate}</div>
+      `;
+      actionBtn = `
+        <button class="btn-sm-action" disabled style="opacity:0.45;cursor:not-allowed;background:rgba(239,68,68,0.12);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);" title="Donor is locked in the 90-day recovery cooling period until ${eligibility.nextDate}">
+          🔒 Cooling (${eligibility.daysRemaining}d)
+        </button>
       `;
     }
 
@@ -713,9 +787,7 @@ function renderDonorRegistryRows(donors) {
         </td>
         <td>${statusPill}</td>
         <td style="text-align:right;">
-          <button class="btn-sm-action" onclick="simulateDispatchForDonor('${d.donor_id || d.email}', '${d.full_name}', '${d.blood_group}', '${d.phone}', '${d.email}')" style="background:rgba(255,255,255,0.06);color:#fff;">
-            Simulate Arrival
-          </button>
+          ${actionBtn}
         </td>
       </tr>
     `;
@@ -749,6 +821,30 @@ function simulateTestArrival() {
 }
 
 window.simulateDispatchForDonor = function (donorId, donorName, bloodGroup, phone, email) {
+  const dispatches = getDispatches();
+
+  // 1. Guard against donor already having an active en-route or arrived ticket
+  const existingActive = dispatches.find(d =>
+    (d.status === 'en_route' || d.status === 'arrived') &&
+    ((donorId && d.donorId === donorId) || (email && d.email && d.email.toLowerCase() === email.toLowerCase()))
+  );
+  if (existingActive) {
+    adminToast('Active Ticket Exists', `${donorName} already has an active arrival ticket (${existingActive.ticketId}) at the desk.`, 'alert');
+    return;
+  }
+
+  // 2. Guard against donor being locked in the NBTC 90-day cooling period
+  const donorObj = (activeDonorsCache || []).find(d =>
+    (donorId && d.donor_id === donorId) || (email && d.email && d.email.toLowerCase() === email.toLowerCase())
+  );
+  if (donorObj && donorObj.last_donation) {
+    const cooling = calculateLegalEligibility(donorObj.last_donation);
+    if (!cooling.eligible) {
+      adminToast('Donor Ineligible (Cooling Period)', `${donorName} donated on ${cooling.lastDateStr} and is in the 90-day NBTC waiting period until ${cooling.nextDate} (${cooling.daysRemaining} days remaining).`, 'alert');
+      return;
+    }
+  }
+
   const targetHospital = currentHospitalFilter === 'ALL'
     ? BANGALORE_HOSPITALS[0].fullName
     : currentHospitalFilter;
@@ -769,7 +865,6 @@ window.simulateDispatchForDonor = function (donorId, donorName, bloodGroup, phon
     acceptedAt: new Date().toISOString()
   };
 
-  const dispatches = getDispatches();
   dispatches.unshift(newDispatch);
   saveDispatches(dispatches);
 

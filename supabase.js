@@ -211,26 +211,40 @@ let isDonorAuthenticated = false;
 let currentDonorProfile = null;
 
 // ── NBTC Mandatory 90-Day Legal Cooling Period Helper ──
+// ── Safe Calendar Date Parser (Prevents UTC timezone drift) ──
+function parseSafeDate(str) {
+  if (!str) return null;
+  if (typeof str === 'string') {
+    const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      const y = parseInt(match[1], 10);
+      const m = parseInt(match[2], 10) - 1;
+      const d = parseInt(match[3], 10);
+      return new Date(y, m, d, 0, 0, 0, 0);
+    }
+  }
+  const dt = new Date(str);
+  if (isNaN(dt.getTime())) return null;
+  return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), 0, 0, 0, 0);
+}
+
 function checkLegalWaitingPeriod(lastDonationStr) {
   if (!lastDonationStr) {
     return { eligible: true, daysElapsed: null, daysRemaining: 0, nextDate: 'Eligible Today', lastDateStr: 'Never Donated' };
   }
-  const lastDate = new Date(lastDonationStr);
-  if (isNaN(lastDate.getTime())) {
+  const lastTime = parseSafeDate(lastDonationStr);
+  if (!lastTime) {
     return { eligible: true, daysElapsed: null, daysRemaining: 0, nextDate: 'Eligible Today', lastDateStr: 'Unknown' };
   }
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const lastTime = new Date(lastDate);
-  lastTime.setHours(0, 0, 0, 0);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
 
-  const diffDays = Math.floor((today - lastTime) / (1000 * 60 * 60 * 24));
+  const diffDays = Math.max(0, Math.floor((today.getTime() - lastTime.getTime()) / (1000 * 60 * 60 * 24)));
   const WAITING_PERIOD = 90; // Mandatory NBTC whole blood recovery interval
 
-  const nextDateObj = new Date(lastTime);
-  nextDateObj.setDate(nextDateObj.getDate() + WAITING_PERIOD);
+  const nextDateObj = new Date(lastTime.getFullYear(), lastTime.getMonth(), lastTime.getDate() + WAITING_PERIOD, 0, 0, 0, 0);
   const nextDateFormatted = nextDateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-  const lastDateFormatted = lastDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  const lastDateFormatted = lastTime.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
   if (diffDays >= WAITING_PERIOD) {
     return {

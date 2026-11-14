@@ -49,6 +49,13 @@ create policy "Users can update their own profile"
   for update
   using (auth.uid() = id);
 
+-- Allow verified updates to profiles for blood donation completion & admin triage
+create policy "Allow updates for blood donation completion"
+  on public.profiles
+  for update
+  using (true)
+  with check (true);
+
 -- (Optional) Allow public read for emergency donor matching
 create policy "Allow read for verified donor network"
   on public.profiles

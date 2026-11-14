@@ -162,15 +162,15 @@ async function syncProfileWithSupabase() {
         ? checkLegalWaitingPeriod(p.last_donation)
         : (function () {
             if (!p.last_donation) return { eligible: true, daysRemaining: 0, nextDate: 'Eligible Today', lastDateStr: 'Ready' };
-            const d = new Date(p.last_donation);
-            const today = new Date();
-            today.setHours(0,0,0,0);
-            const diff = Math.floor((today - d)/(1000*60*60*24));
-            const next = new Date(d);
-            next.setDate(next.getDate() + 90);
+            const match = String(p.last_donation).match(/^(\d{4})-(\d{2})-(\d{2})/);
+            const d = match ? new Date(parseInt(match[1], 10), parseInt(match[2], 10) - 1, parseInt(match[3], 10), 0, 0, 0, 0) : new Date(p.last_donation);
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+            const diff = Math.max(0, Math.floor((today.getTime() - d.getTime()) / (1000 * 60 * 60 * 24)));
+            const next = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 90, 0, 0, 0, 0);
             return {
               eligible: diff >= 90,
-              daysRemaining: 90 - diff,
+              daysRemaining: Math.max(0, 90 - diff),
               nextDate: next.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
               lastDateStr: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
             };
