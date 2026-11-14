@@ -26,9 +26,13 @@ function adminToast(title, msg, type = 'info') {
   el.className = `toast ${type}`;
   if (type === 'success') el.style.borderLeftColor = '#34d399';
   if (type === 'alert') el.style.borderLeftColor = '#ef4444';
-  el.innerHTML = `<div><b style="color:${type === 'success' ? '#a7f3d0' : '#ffd166'};">${title}</b><p>${msg}</p></div>`;
+  const titleColor = type === 'success' ? '#6ee7b7' : (type === 'alert' ? '#fca5a5' : '#ffd166');
+  el.innerHTML = `<div class="toast-body"><b style="color:${titleColor};font-size:0.86rem;display:block;margin-bottom:2px;">${title}</b><p style="color:#ffffff;font-size:0.82rem;font-weight:500;margin:0;">${msg}</p></div>`;
   wrap.appendChild(el);
-  setTimeout(() => el.remove(), 4200);
+  setTimeout(() => {
+    el.classList.add('leaving');
+    setTimeout(() => el.remove(), 320);
+  }, 4200);
 }
 
 // ── Storage Helpers ──

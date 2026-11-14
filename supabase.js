@@ -348,11 +348,14 @@ function showCompatAlert(title, message) {
   const wrap = document.getElementById('toastWrap');
   if (!wrap) return;
   const el = document.createElement('div');
-  el.className = 'toast';
+  el.className = 'toast urgent';
   el.style.borderLeftColor = '#ef4444';
-  el.innerHTML = `<div><b style="color:#fca5a5;">${title}</b><p>${message}</p></div>`;
+  el.innerHTML = `<div class="toast-body"><b style="color:#fca5a5;font-size:0.86rem;display:block;margin-bottom:2px;">${title}</b><p style="color:#ffffff;font-size:0.82rem;font-weight:500;margin:0;">${message}</p></div>`;
   wrap.appendChild(el);
-  setTimeout(() => el.remove(), 5500);
+  setTimeout(() => {
+    el.classList.add('leaving');
+    setTimeout(() => el.remove(), 320);
+  }, 5500);
 }
 
 // Intercept clicks on .accept-btn in capturing phase to enforce production rules

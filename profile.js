@@ -11,9 +11,12 @@ function toast(title, detail) {
   if (!wrap) return;
   const el = document.createElement('div');
   el.className = 'toast info';
-  el.innerHTML = '<div><b>' + title + '</b><p>' + detail + '</p></div>';
+  el.innerHTML = '<div class="toast-body"><b style="color:#ffd166;font-size:0.86rem;display:block;margin-bottom:2px;">' + title + '</b><p style="color:#ffffff;font-size:0.82rem;font-weight:500;margin:0;">' + detail + '</p></div>';
   wrap.appendChild(el);
-  setTimeout(() => el.remove(), 3400);
+  setTimeout(() => {
+    el.classList.add('leaving');
+    setTimeout(() => el.remove(), 320);
+  }, 3400);
 }
 
 // Window scroll listeners
