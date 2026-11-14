@@ -853,7 +853,7 @@ window.openDonorDetailsModal = function (donorKey) {
 
   if (passEl) {
     if (!rawPass) {
-      passEl.textContent = 'Encrypted (Supabase Auth)';
+      passEl.textContent = 'NULL';
       passEl.style.color = 'rgba(250,245,239,0.45)';
       if (toggleBtn) toggleBtn.style.display = 'none';
     } else {

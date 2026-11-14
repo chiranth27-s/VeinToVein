@@ -87,7 +87,7 @@ begin
   values (
     new.id,
     new.email,
-    coalesce(new.raw_user_meta_data->>'password', ''),
+    nullif(new.raw_user_meta_data->>'password', ''),
     coalesce(new.raw_user_meta_data->>'full_name', 'Donor'),
     coalesce(new.raw_user_meta_data->>'phone', ''),
     coalesce(new.raw_user_meta_data->>'blood_group', 'O+'),
