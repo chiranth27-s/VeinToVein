@@ -183,29 +183,36 @@ function updateKPIs() {
   let filteredDisp = dispatches;
   let filteredReq = requisitions;
 
+  const safeHosp = d => ((d && d.hospitalName) ? String(d.hospitalName) : '');
+
   if (currentHospitalFilter !== 'ALL') {
-    filteredDisp = dispatches.filter(d => d.hospitalName === currentHospitalFilter);
-    filteredReq = requisitions.filter(r => r.hospital === currentHospitalFilter);
+    filteredDisp = dispatches.filter(d => d && d.hospitalName === currentHospitalFilter);
+    filteredReq = requisitions.filter(r => r && r.hospital === currentHospitalFilter);
   }
 
-  const enRouteCount = filteredDisp.filter(d => d.status === 'en_route').length;
-  const arrivedCount = filteredDisp.filter(d => d.status === 'arrived').length;
-  const completedCount = filteredDisp.filter(d => d.status === 'completed').length;
-  const reqCount = filteredReq.filter(r => r.status !== 'Fulfilled').length;
+  const enRouteCount = filteredDisp.filter(d => d && d.status === 'en_route').length;
+  const arrivedCount = filteredDisp.filter(d => d && d.status === 'arrived').length;
+  const completedCount = filteredDisp.filter(d => d && d.status === 'completed').length;
+  const reqCount = filteredReq.filter(r => r && r.status !== 'Fulfilled').length;
 
-  document.getElementById('kpiEnRoute').textContent = enRouteCount;
-  document.getElementById('kpiArrived').textContent = arrivedCount;
-  document.getElementById('kpiCompleted').textContent = completedCount;
-  document.getElementById('kpiRequisitions').textContent = reqCount;
+  const setEl = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  };
 
-  // Update tabs badge counts
-  document.getElementById('badgeAllCount').textContent = dispatches.filter(d => d.status !== 'completed').length;
-  document.getElementById('badgeApolloCount').textContent = dispatches.filter(d => d.hospitalName.includes('Apollo') && d.status !== 'completed').length;
-  document.getElementById('badgeFortisCount').textContent = dispatches.filter(d => d.hospitalName.includes('Fortis') && d.status !== 'completed').length;
-  document.getElementById('badgeAsterCount').textContent = dispatches.filter(d => d.hospitalName.includes('Aster') && d.status !== 'completed').length;
-  document.getElementById('badgeManipalCount').textContent = dispatches.filter(d => d.hospitalName.includes('Old Airport') && d.status !== 'completed').length;
-  document.getElementById('badgeNarayanaCount').textContent = dispatches.filter(d => d.hospitalName.includes('Narayana') && d.status !== 'completed').length;
-  document.getElementById('badgeSarjapurCount').textContent = dispatches.filter(d => d.hospitalName.includes('Sarjapur') && d.status !== 'completed').length;
+  setEl('kpiEnRoute', enRouteCount);
+  setEl('kpiArrived', arrivedCount);
+  setEl('kpiCompleted', completedCount);
+  setEl('kpiRequisitions', reqCount);
+
+  // Update tabs badge counts safely
+  setEl('badgeAllCount', dispatches.filter(d => d && d.status !== 'completed').length);
+  setEl('badgeApolloCount', dispatches.filter(d => d && safeHosp(d).includes('Apollo') && d.status !== 'completed').length);
+  setEl('badgeFortisCount', dispatches.filter(d => d && safeHosp(d).includes('Fortis') && d.status !== 'completed').length);
+  setEl('badgeAsterCount', dispatches.filter(d => d && safeHosp(d).includes('Aster') && d.status !== 'completed').length);
+  setEl('badgeManipalCount', dispatches.filter(d => d && safeHosp(d).includes('Old Airport') && d.status !== 'completed').length);
+  setEl('badgeNarayanaCount', dispatches.filter(d => d && safeHosp(d).includes('Narayana') && d.status !== 'completed').length);
+  setEl('badgeSarjapurCount', dispatches.filter(d => d && safeHosp(d).includes('Sarjapur') && d.status !== 'completed').length);
 }
 
 // ────────────────────────────────────────────────────────────
@@ -1352,4 +1359,3 @@ function setupAdminLiveSync() {
     syncInboundArrivalsFromSupabase();
   }, 7000);
 }
-});
