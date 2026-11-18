@@ -228,7 +228,23 @@ function parseSafeDate(str) {
   return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), 0, 0, 0, 0);
 }
 
-function checkLegalWaitingPeriod(lastDonationStr) {
+// ── Helper to identify unrestricted demo testing account ──
+function isDemoDonor(email) {
+  const checkEmail = email || (typeof currentDonorProfile !== 'undefined' ? currentDonorProfile?.email : null);
+  return Boolean(checkEmail && checkEmail.toLowerCase() === 'demo123@gmail.com');
+}
+
+function checkLegalWaitingPeriod(lastDonationStr, email) {
+  if (isDemoDonor(email)) {
+    return {
+      eligible: true,
+      daysElapsed: 0,
+      daysRemaining: 0,
+      nextDate: 'Eligible Anytime (Demo VIP)',
+      lastDateStr: lastDonationStr ? new Date(lastDonationStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Data Not Available',
+      isDemo: true
+    };
+  }
   if (!lastDonationStr) {
     return { eligible: true, daysElapsed: null, daysRemaining: 0, nextDate: 'Eligible Today', lastDateStr: 'Data Not Available' };
   }
@@ -311,7 +327,20 @@ function applyCompatibilityToCard(card) {
   // User is authenticated: Enforce strict compatibility & NBTC 90-day waiting period
   btn.classList.remove('guest-btn');
 
-  const legalStatus = checkLegalWaitingPeriod(currentDonorProfile?.last_donation);
+  // Check unrestricted demo donor bypass
+  if (isDemoDonor(currentDonorProfile?.email)) {
+    btn.classList.remove('incompatible', 'cooling-locked');
+    btn.disabled = false;
+    btn.title = `⚡ Demo VIP Account: Unrestricted multiple donation access (${activeDonorBloodGroup || 'O-'} Universal Donor)`;
+    btn.innerHTML = `
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+      <span>⚡ I Can Donate (Demo VIP)</span>
+    `;
+    compatBadge.innerHTML = `<span class="compat-badge-match" style="background:rgba(52,211,153,0.18);border-color:rgba(52,211,153,0.45);color:#34d399;">⚡ Demo VIP Donor · Unrestricted Donations Active</span>`;
+    return;
+  }
+
+  const legalStatus = checkLegalWaitingPeriod(currentDonorProfile?.last_donation, currentDonorProfile?.email);
 
   // 1. Check if donor is locked in legal waiting period
   if (!legalStatus.eligible) {
@@ -392,7 +421,7 @@ document.addEventListener('click', (e) => {
   if (btn.classList.contains('cooling-locked')) {
     e.preventDefault();
     e.stopImmediatePropagation();
-    const legalStatus = checkLegalWaitingPeriod(currentDonorProfile?.last_donation);
+    const legalStatus = checkLegalWaitingPeriod(currentDonorProfile?.last_donation, currentDonorProfile?.email);
     showCompatAlert(
       'NBTC Legal Cooling Period Active',
       `Under National Blood Transfusion Council (NBTC) regulations, donors must rest for <b>90 days</b> between whole blood donations to replenish hemoglobin and iron reserves.<br><br>Last Donation: <b>${legalStatus.lastDateStr}</b><br>Next Eligible Date: <b style="color:#6ee7b7;">${legalStatus.nextDate}</b> (${legalStatus.daysRemaining} days remaining).`
@@ -512,17 +541,27 @@ async function initLiveRequestCompatibility() {
       currentDonorProfile = current.profile;
       const donorName = current.profile.full_name || 'Donor';
 
-      const legalStatus = checkLegalWaitingPeriod(current.profile.last_donation);
+      const isDemo = isDemoDonor(current.profile.email);
+      const legalStatus = checkLegalWaitingPeriod(current.profile.last_donation, current.profile.email);
 
       if (contentEl) {
-        if (!legalStatus.eligible) {
+        if (isDemo) {
+          contentEl.innerHTML = `Demo VIP Donor: <b style="color:#fff;">${donorName}</b> &middot; Group: <b style="color:var(--gold);font-size:1.05rem;">${activeDonorBloodGroup}</b> <span style="font-size:0.72rem;color:#6ee7b7;margin-left:8px;font-weight:700;">(⚡ Unrestricted Multi-Donation VIP Active)</span>`;
+        } else if (!legalStatus.eligible) {
           contentEl.innerHTML = `Verified Donor: <b style="color:#fff;">${donorName}</b> &middot; Group: <b style="color:var(--gold);font-size:1.05rem;">${activeDonorBloodGroup}</b> <span style="font-size:0.72rem;color:#fca5a5;margin-left:8px;font-weight:700;">(🔒 90-Day Cooling Period until ${legalStatus.nextDate})</span>`;
         } else {
           contentEl.innerHTML = `Verified Donor: <b style="color:#fff;">${donorName}</b> &middot; Group: <b style="color:var(--gold);font-size:1.05rem;">${activeDonorBloodGroup}</b> <span style="font-size:0.7rem;color:#6ee7b7;margin-left:6px;font-weight:700;">(✓ Eligible to Donate)</span>`;
         }
       }
       if (actionEl) {
-        if (!legalStatus.eligible) {
+        if (isDemo) {
+          actionEl.innerHTML = `
+            <span class="compat-badge-match" style="padding:4px 8px;font-size:0.7rem;background:rgba(52,211,153,0.18);">
+              ⚡ Unrestricted Access
+            </span>
+            <a href="profile.html" class="btn btn-ghost-light btn-sm" style="padding:0.35rem 0.85rem;font-size:0.74rem;">My Passport &rarr;</a>
+          `;
+        } else if (!legalStatus.eligible) {
           actionEl.innerHTML = `
             <span class="compat-badge-mismatch" style="font-size:0.7rem;padding:4px 8px;">
               🔒 Cooling (${legalStatus.daysRemaining}d left)

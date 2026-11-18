@@ -352,6 +352,22 @@
       <!-- Global Alert Container -->
       <div class="auth-alert" id="authAlert" role="alert"></div>
 
+      <!-- ⚡ Demo Account Quick Fill Pill -->
+      <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.28);border-radius:12px;padding:0.7rem 0.9rem;margin-bottom:1.1rem;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
+        <div>
+          <div style="font-size:0.78rem;font-weight:700;color:#047857;display:flex;align-items:center;gap:6px;">
+            <span>⚡ Demo Universal Donor</span>
+            <span style="background:#10b981;color:#fff;font-size:0.62rem;font-weight:700;padding:1px 6px;border-radius:999px;">No Limits</span>
+          </div>
+          <div style="font-size:0.72rem;color:#4b5563;margin-top:2px;">
+            <code>demo123@gmail.com</code> · Pass: <code>demo123</code> · Multi-donation bypass
+          </div>
+        </div>
+        <button type="button" id="btnQuickFillDemo" onclick="fillDemoCredentials()" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:6px 11px;font-size:0.74rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:transform 0.15s ease;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
+          Quick Fill
+        </button>
+      </div>
+
       <!-- ────── SIGN IN FORM ────── -->
       <form class="auth-form active" id="signInForm" novalidate>
         <div class="field full" style="margin-bottom:1rem">
@@ -527,6 +543,19 @@ tabBtnSignIn.addEventListener('click', () => setMode('signin'));
 tabBtnSignUp.addEventListener('click', () => setMode('signup'));
 document.getElementById('switchToSignUp').addEventListener('click', (e) => { e.preventDefault(); setMode('signup'); });
 document.getElementById('switchToSignIn').addEventListener('click', (e) => { e.preventDefault(); setMode('signin'); });
+
+// Quick fill Demo VIP Account credentials
+window.fillDemoCredentials = function () {
+  setMode('signin');
+  const emailInput = document.getElementById('loginEmail');
+  const passInput = document.getElementById('loginPassword');
+  if (emailInput && passInput) {
+    emailInput.value = 'demo123@gmail.com';
+    passInput.value = 'demo123';
+    showToast('Demo Credentials Filled', 'demo123@gmail.com is ready to sign in with unrestricted multi-donation privileges.');
+    passInput.focus();
+  }
+};
 
 // Password visibility toggles
 document.querySelectorAll('.pwd-toggle').forEach(btn => {

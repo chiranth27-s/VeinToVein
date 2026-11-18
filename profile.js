@@ -159,9 +159,13 @@ async function syncProfileWithSupabase() {
       const passText = document.getElementById('profilePassText');
       const passChip = document.getElementById('profilePassChip');
 
+      const userEmail = (u && u.email) || p.email || '';
+      const isDemo = (typeof isDemoDonor === 'function' ? isDemoDonor(userEmail) : userEmail.trim().toLowerCase() === 'demo123@gmail.com');
+
       const eligibility = typeof checkLegalWaitingPeriod === 'function'
-        ? checkLegalWaitingPeriod(p.last_donation)
+        ? checkLegalWaitingPeriod(p.last_donation, userEmail)
         : (function () {
+            if (isDemo) return { eligible: true, daysRemaining: 0, nextDate: 'Eligible Anytime (Demo VIP)', lastDateStr: 'Verified Lab', isDemo: true };
             if (!p.last_donation) return { eligible: true, daysRemaining: 0, nextDate: 'Eligible Today', lastDateStr: 'Data Not Available' };
             const match = String(p.last_donation).match(/^(\d{4})-(\d{2})-(\d{2})/);
             const d = match ? new Date(parseInt(match[1], 10), parseInt(match[2], 10) - 1, parseInt(match[3], 10), 0, 0, 0, 0) : new Date(p.last_donation);
@@ -177,11 +181,22 @@ async function syncProfileWithSupabase() {
             };
           })();
 
-      if (!eligibility.eligible) {
+      if (isDemo) {
+        if (statLast) statLast.textContent = p.last_donation ? `${eligibility.lastDateStr} · Lab Verified` : 'Multiple Test Donations Active';
+        if (statNext) statNext.innerHTML = `<span style="color:#34d399;font-weight:700;">Eligible Anytime (Demo VIP)</span> · No Cooldown Restrictions`;
+        if (passText) passText.textContent = '⚡ UNRESTRICTED DEMO PASSPORT · ELIGIBLE TO DONATE MULTIPLE TIMES';
+        if (passChip) {
+          passChip.textContent = '⚡ DEMO VIP · NO RESTRICTIONS';
+          passChip.style.background = 'rgba(52, 211, 153, 0.22)';
+          passChip.style.borderColor = 'rgba(52, 211, 153, 0.6)';
+          passChip.style.color = '#34d399';
+        }
+      } else if (!eligibility.eligible) {
         if (statLast) statLast.textContent = `${eligibility.lastDateStr} · Hospital Verified`;
         if (statNext) statNext.innerHTML = `<span style="color:#fca5a5;font-weight:700;">${eligibility.nextDate}</span> (${eligibility.daysRemaining} days remaining)`;
         if (passText) passText.textContent = `🔒 90-DAY COOLING PERIOD ACTIVE · NEXT ${eligibility.nextDate.toUpperCase()}`;
         if (passChip) {
+          passChip.textContent = 'RESTING PERIOD';
           passChip.style.background = 'rgba(239, 68, 68, 0.16)';
           passChip.style.borderColor = 'rgba(239, 68, 68, 0.4)';
           passChip.style.color = '#fca5a5';
@@ -191,6 +206,7 @@ async function syncProfileWithSupabase() {
         if (statNext) statNext.textContent = 'Eligible today (whole blood)';
         if (passText) passText.textContent = 'ELIGIBILITY PASSPORT ACTIVE · ELIGIBLE NOW';
         if (passChip) {
+          passChip.textContent = 'ELIGIBLE';
           passChip.style.background = 'rgba(52, 211, 153, 0.14)';
           passChip.style.borderColor = 'rgba(52, 211, 153, 0.35)';
           passChip.style.color = '#6ee7b7';

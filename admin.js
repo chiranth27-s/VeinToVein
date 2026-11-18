@@ -120,8 +120,23 @@ function parseSafeDate(str) {
   return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), 0, 0, 0, 0);
 }
 
+// ── Helper to identify unrestricted demo testing account ──
+function isDemoDonor(email) {
+  return Boolean(email && email.toLowerCase() === 'demo123@gmail.com');
+}
+
 // ── Calculate 90-Day NBTC Legal Waiting Period ──
-function calculateLegalEligibility(lastDonationStr) {
+function calculateLegalEligibility(lastDonationStr, email) {
+  if (isDemoDonor(email)) {
+    return {
+      eligible: true,
+      daysElapsed: 0,
+      daysRemaining: 0,
+      nextDate: 'Eligible Anytime (Demo VIP)',
+      lastDateStr: lastDonationStr ? new Date(lastDonationStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Data Not Available',
+      isDemo: true
+    };
+  }
   if (!lastDonationStr) {
     return { eligible: true, daysElapsed: null, daysRemaining: 0, nextDate: 'Eligible Today', lastDateStr: 'Data Not Available' };
   }
@@ -257,9 +272,14 @@ function renderArrivalsTable() {
         </button>
       `;
     } else if (item.status === 'completed') {
-      const cooling = calculateLegalEligibility(item.completedAt || item.acceptedAt);
+      const isDemo = isDemoDonor(item.email);
+      const cooling = calculateLegalEligibility(item.completedAt || item.acceptedAt, item.email);
       statusBadge = `<span class="status-pill status-completed">✓ 1 Unit Collected</span>`;
-      actionButtons = `
+      actionButtons = isDemo ? `
+        <div style="font-size:0.72rem;color:#34d399;line-height:1.3;text-align:right;">
+          <span class="status-pill status-completed" style="font-size:0.65rem;padding:2px 6px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.35);">⚡ Demo VIP · Ready to Donate</span>
+        </div>
+      ` : `
         <div style="font-size:0.72rem;color:#fca5a5;line-height:1.3;text-align:right;">
           <span class="status-pill status-cooling" style="font-size:0.65rem;padding:2px 6px;">🔒 Cooling Period</span><br>
           <small>Next eligible: ${cooling.nextDate}</small>
@@ -496,11 +516,14 @@ document.getElementById('finalizeDonationForm')?.addEventListener('submit', asyn
   // Close modal
   document.getElementById('completeDonationModal').classList.remove('open');
 
-  const cooling = calculateLegalEligibility(todayStr);
+  const isDemo = isDemoDonor(donorEmail);
+  const cooling = calculateLegalEligibility(todayStr, donorEmail);
 
   adminToast(
-    'Donation Finalized & Profile Synced!',
-    `1 unit of <b>${bloodGroup}</b> collected at <b>${hospitalName}</b>. Donor profile updated (+1 donation, +3 lives). <b>90-day NBTC waiting period locked</b> until ${cooling.nextDate}.`,
+    isDemo ? '⚡ Demo Donation Finalized!' : 'Donation Finalized & Profile Synced!',
+    isDemo
+      ? `1 unit collected for <b>${hospitalName}</b>. Demo account (<b>demo123@gmail.com</b>) has <b>zero cooldown restrictions</b> and can donate blood again immediately!`
+      : `1 unit of <b>${bloodGroup}</b> collected at <b>${hospitalName}</b>. Donor profile updated (+1 donation, +3 lives). <b>90-day NBTC waiting period locked</b> until ${cooling.nextDate}.`,
     'success'
   );
 
@@ -744,12 +767,25 @@ function renderDonorRegistryRows(donors) {
   }
 
   tbody.innerHTML = donors.map(d => {
-    const eligibility = calculateLegalEligibility(d.last_donation);
+    const isDemo = isDemoDonor(d.email);
+    const eligibility = calculateLegalEligibility(d.last_donation, d.email);
 
     let statusPill = '';
     let actionBtn = '';
 
-    if (eligibility.eligible) {
+    if (isDemo) {
+      statusPill = `
+        <span class="status-pill status-completed" style="background:rgba(52,211,153,0.18);color:#34d399;border:1px solid rgba(52,211,153,0.45);font-weight:700;">
+          ⚡ Demo VIP · No Cooldown
+        </span>
+        <div style="font-size:0.68rem;color:#6ee7b7;margin-top:2px;">Unrestricted Multiple Donations</div>
+      `;
+      actionBtn = `
+        <button class="btn-sm-action" onclick="simulateDispatchForDonor('${d.donor_id || d.email}', '${d.full_name}', '${d.blood_group}', '${d.phone}', '${d.email}')" style="background:#10b981;color:#fff;font-weight:700;" title="Demo VIP: Dispatch & donate blood multiple times without restriction">
+          Simulate Arrival
+        </button>
+      `;
+    } else if (eligibility.eligible) {
       statusPill = `<span class="status-pill status-completed">✓ Eligible Now</span>`;
       actionBtn = `
         <button class="btn-sm-action" onclick="simulateDispatchForDonor('${d.donor_id || d.email}', '${d.full_name}', '${d.blood_group}', '${d.phone}', '${d.email}')" style="background:rgba(255,255,255,0.06);color:#fff;">
@@ -811,7 +847,8 @@ window.openDonorDetailsModal = function (donorKey) {
   if (!d) return;
 
   isPasswordRevealed = false;
-  const eligibility = calculateLegalEligibility(d.last_donation);
+  const isDemo = isDemoDonor(d.email);
+  const eligibility = calculateLegalEligibility(d.last_donation, d.email);
 
   // Populate basic info
   const badgeEl = document.getElementById('ddBloodBadge');
@@ -878,7 +915,22 @@ window.openDonorDetailsModal = function (donorKey) {
   const dispatchBtn = document.getElementById('btnModalSimulateDispatch');
 
   if (regBox && regTitle && regDesc) {
-    if (eligibility.eligible) {
+    if (isDemo) {
+      regBox.style.background = 'rgba(52,211,153,0.18)';
+      regBox.style.borderColor = 'rgba(52,211,153,0.45)';
+      regTitle.style.color = '#34d399';
+      regTitle.textContent = '⚡ Demo VIP Account (Zero Restrictions)';
+      regDesc.textContent = 'This demo account is granted unrestricted donation access. It bypasses the 90-day waiting period and can donate blood multiple times for testing.';
+      if (dispatchBtn) {
+        dispatchBtn.disabled = false;
+        dispatchBtn.style.opacity = '1';
+        dispatchBtn.style.cursor = 'pointer';
+        dispatchBtn.onclick = () => {
+          document.getElementById('donorDetailsModal').classList.remove('open');
+          simulateDispatchForDonor(d.donor_id || d.email, d.full_name, d.blood_group, d.phone, d.email);
+        };
+      }
+    } else if (eligibility.eligible) {
       regBox.style.background = 'rgba(52,211,153,0.1)';
       regBox.style.borderColor = 'rgba(52,211,153,0.25)';
       regTitle.style.color = '#6ee7b7';
@@ -939,26 +991,31 @@ function simulateTestArrival() {
 
 window.simulateDispatchForDonor = function (donorId, donorName, bloodGroup, phone, email) {
   const dispatches = getDispatches();
+  const isDemo = isDemoDonor(email);
 
-  // 1. Guard against donor already having an active en-route or arrived ticket
-  const existingActive = dispatches.find(d =>
-    (d.status === 'en_route' || d.status === 'arrived') &&
-    ((donorId && d.donorId === donorId) || (email && d.email && d.email.toLowerCase() === email.toLowerCase()))
-  );
-  if (existingActive) {
-    adminToast('Active Ticket Exists', `${donorName} already has an active arrival ticket (${existingActive.ticketId}) at the desk.`, 'alert');
-    return;
+  // 1. Guard against donor already having an active en-route or arrived ticket (bypassed for demo account)
+  if (!isDemo) {
+    const existingActive = dispatches.find(d =>
+      (d.status === 'en_route' || d.status === 'arrived') &&
+      ((donorId && d.donorId === donorId) || (email && d.email && d.email.toLowerCase() === email.toLowerCase()))
+    );
+    if (existingActive) {
+      adminToast('Active Ticket Exists', `${donorName} already has an active arrival ticket (${existingActive.ticketId}) at the desk.`, 'alert');
+      return;
+    }
   }
 
-  // 2. Guard against donor being locked in the NBTC 90-day cooling period
-  const donorObj = (activeDonorsCache || []).find(d =>
-    (donorId && d.donor_id === donorId) || (email && d.email && d.email.toLowerCase() === email.toLowerCase())
-  );
-  if (donorObj && donorObj.last_donation) {
-    const cooling = calculateLegalEligibility(donorObj.last_donation);
-    if (!cooling.eligible) {
-      adminToast('Donor Ineligible (Cooling Period)', `${donorName} donated on ${cooling.lastDateStr} and is in the 90-day NBTC waiting period until ${cooling.nextDate} (${cooling.daysRemaining} days remaining).`, 'alert');
-      return;
+  // 2. Guard against donor being locked in the NBTC 90-day cooling period (bypassed for demo account)
+  if (!isDemo) {
+    const donorObj = (activeDonorsCache || []).find(d =>
+      (donorId && d.donor_id === donorId) || (email && d.email && d.email.toLowerCase() === email.toLowerCase())
+    );
+    if (donorObj && donorObj.last_donation) {
+      const cooling = calculateLegalEligibility(donorObj.last_donation, email);
+      if (!cooling.eligible) {
+        adminToast('Donor Ineligible (Cooling Period)', `${donorName} donated on ${cooling.lastDateStr} and is in the 90-day NBTC waiting period until ${cooling.nextDate} (${cooling.daysRemaining} days remaining).`, 'alert');
+        return;
+      }
     }
   }
 
