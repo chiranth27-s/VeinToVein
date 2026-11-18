@@ -92,6 +92,13 @@
 
   function formatCardHospital(card) {
     if (!card || !card.querySelector) return;
+    // Do not overwrite real live broadcasted requisitions from Admin/Supabase
+    if (card.dataset.customReq === 'true' || card.dataset.reqCode || card.dataset.reqId) {
+      if (typeof applyCompatibilityToCard === 'function') {
+        applyCompatibilityToCard(card);
+      }
+      return;
+    }
     const h3 = card.querySelector('.req-meta h3');
     const p = card.querySelector('.req-meta p');
     if (h3 && p) {
@@ -111,7 +118,7 @@
 
     // Format any initial cards rendered by script.js
     setTimeout(() => {
-      grid.querySelectorAll('.req-card').forEach(formatCardHospital);
+      grid.querySelectorAll('.req-card:not([data-custom-req="true"])').forEach(formatCardHospital);
     }, 400);
 
     let isInitialLoad = true;
@@ -122,8 +129,10 @@
     const origPrepend = grid.prepend;
     const origInsertBefore = grid.insertBefore;
 
-    function shouldThrottle() {
+    function shouldThrottle(node) {
       if (isInitialLoad) return false;
+      // Never throttle admin or live broadcast requisitions
+      if (node && node.dataset && (node.dataset.customReq === 'true' || node.dataset.reqCode)) return false;
       const now = Date.now();
       if (now - lastRequestTime < 60000) {
         return true;
@@ -134,19 +143,15 @@
 
     if (origPrepend) {
       grid.prepend = function (...nodes) {
-        if (shouldThrottle()) {
-          console.log('[VeinToVein] Throttled rapid request card (ensuring 1-2 min pacing)');
-          return;
-        }
-        nodes.forEach(formatCardHospital);
-        return origPrepend.apply(this, nodes);
+        const toInsert = nodes.filter(n => !shouldThrottle(n));
+        toInsert.forEach(formatCardHospital);
+        return origPrepend.apply(this, toInsert);
       };
     }
 
     if (origInsertBefore) {
       grid.insertBefore = function (newNode, referenceNode) {
-        if (shouldThrottle()) {
-          console.log('[VeinToVein] Throttled rapid request card (ensuring 1-2 min pacing)');
+        if (shouldThrottle(newNode)) {
           return newNode;
         }
         formatCardHospital(newNode);
@@ -483,6 +488,16 @@ document.addEventListener('click', (e) => {
       acceptedAt: new Date().toISOString()
     };
 
+    // Update card progress bar in UI
+    const curNeeded = +(card.dataset.needed || 3);
+    const curEnroute = (+(card.dataset.enroute || 0)) + 1;
+    card.dataset.enroute = curEnroute;
+    const curPct = Math.min(100, Math.round((curEnroute / curNeeded) * 100));
+    const barEl = card.querySelector('.req-progress .bar i');
+    if (barEl) barEl.style.width = curPct + '%';
+    const labelEl = card.querySelector('.enroute-label');
+    if (labelEl) labelEl.textContent = `${curEnroute}/${curNeeded} donors en route`;
+
     try {
       const raw = localStorage.getItem('veintovein_dispatches');
       const list = raw ? JSON.parse(raw) : [];
@@ -490,30 +505,51 @@ document.addEventListener('click', (e) => {
       localStorage.setItem('veintovein_dispatches', JSON.stringify(list));
       window.dispatchEvent(new CustomEvent('veintovein_dispatch_updated'));
 
+      // Broadcast immediately across open tabs (Admin dashboard desk)
+      try {
+        const bc = new BroadcastChannel('veintovein_channel');
+        bc.postMessage({ type: 'DONOR_DISPATCH', dispatch: newDispatch });
+      } catch (bcErr) {}
+
       // Also persist donor acceptance into Supabase tables
       const sb = typeof getSupabase === 'function' ? getSupabase() : null;
-      if (sb && currentDonorProfile && currentDonorProfile.id) {
-        // 1. Insert into public.donations
-        sb.from('donations').insert({
-          donor_id: currentDonorProfile.id,
-          centre: hospName,
-          component: 'Whole Blood · 350 ml',
-          status: 'En Route',
-          donated_at: new Date().toISOString().split('T')[0]
-        }).then(({ data, error }) => {
-          if (error) console.warn('[VeinToVein] Supabase donations insert notice:', error);
-          else console.log('[VeinToVein] Requisition acceptance saved to Supabase donations table.');
-        });
+      if (sb) {
+        // 1. Update donors_enroute in blood_requests if this was a live requisition
+        const reqDbId = card.dataset.reqDbId;
+        const reqCode = card.dataset.reqCode;
+        if (reqDbId || reqCode) {
+          sb.from('blood_requests')
+            .update({ donors_enroute: curEnroute })
+            .or(`id.eq.${reqDbId || '00000000-0000-0000-0000-000000000000'},request_code.eq.${reqCode || 'NONE'}`)
+            .then(({ error }) => {
+              if (error) console.warn('[VeinToVein] blood_requests donors_enroute update notice:', error);
+            });
+        }
 
-        // 2. Insert into public.request_responses
-        sb.from('request_responses').insert({
-          donor_id: currentDonorProfile.id,
-          request_id: '8d296ce1-36d7-4161-b0f0-f91455686bde',
-          accepted_at: new Date().toISOString()
-        }).then(({ data, error }) => {
-          if (error) console.warn('[VeinToVein] Supabase request_responses notice:', error);
-          else console.log('[VeinToVein] Accepted response saved to Supabase request_responses table.');
-        });
+        if (currentDonorProfile && currentDonorProfile.id) {
+          // 2. Insert into public.donations
+          sb.from('donations').insert({
+            donor_id: currentDonorProfile.id,
+            centre: hospName,
+            component: 'Whole Blood · 350 ml',
+            status: 'En Route',
+            donated_at: new Date().toISOString().split('T')[0]
+          }).then(({ data, error }) => {
+            if (error) console.warn('[VeinToVein] Supabase donations insert notice:', error);
+            else console.log('[VeinToVein] Requisition acceptance saved to Supabase donations table.');
+          });
+
+          // 3. Insert into public.request_responses
+          const respReqId = reqDbId || '8d296ce1-36d7-4161-b0f0-f91455686bde';
+          sb.from('request_responses').insert({
+            donor_id: currentDonorProfile.id,
+            request_id: respReqId,
+            accepted_at: new Date().toISOString()
+          }).then(({ data, error }) => {
+            if (error) console.warn('[VeinToVein] Supabase request_responses notice:', error);
+            else console.log('[VeinToVein] Accepted response saved to Supabase request_responses table.');
+          });
+        }
       }
     } catch (err) {
       console.warn('Dispatch save error:', err);
@@ -603,7 +639,206 @@ async function initLiveRequestCompatibility() {
 
 document.addEventListener('DOMContentLoaded', () => {
   initLiveRequestCompatibility();
+  syncLiveRequisitionsWithSupabase(false);
+  setupLiveRequisitionListeners();
 });
+
+// ────────────────────────────────────────────────────────────
+// LIVE REQUISITION FEED: SUPABASE & BROADCAST SYNC
+// ────────────────────────────────────────────────────────────
+function createRequisitionCardElement(r) {
+  const urgency = (r.urgency || 'critical').toLowerCase();
+  const bloodGroup = r.blood_group || r.bloodGroup || 'O-';
+  const hospital = r.hospital_name || r.hospital || 'Apollo Hospitals';
+  const area = r.area || r.ward || 'Bengaluru';
+  const dist = r.distance_km ? `${r.distance_km} km` : '2.1 km';
+  const units = r.units_needed || r.units || 2;
+  const enroute = r.donors_enroute || 0;
+  const needed = r.donors_needed || (units + 1);
+  const ts = r.created_at ? new Date(r.created_at).getTime() : Date.now();
+  const reqCode = r.request_code || r.id || `REQ-${Math.floor(100 + Math.random() * 900)}`;
+  const dbId = r.id || '';
+
+  const pct = Math.min(100, Math.round((enroute / needed) * 100));
+  const full = enroute >= needed;
+
+  const card = document.createElement('article');
+  card.className = `req-card ${urgency} card-in`;
+  card.dataset.customReq = 'true';
+  card.dataset.reqCode = reqCode;
+  if (dbId && String(dbId).includes('-')) card.dataset.reqDbId = dbId;
+  card.dataset.needed = needed;
+  card.dataset.enroute = enroute;
+  card.dataset.ts = ts;
+  card.dataset.neededType = bloodGroup;
+
+  card.innerHTML = `
+    <div class="req-top">
+      <div class="type-badge">${bloodGroup}</div>
+      <div class="req-meta">
+        <h3>${hospital}</h3>
+        <p>${area} · ${dist} away</p>
+      </div>
+      <span class="urgency ${urgency}">${urgency.toUpperCase()}</span>
+    </div>
+    <div class="req-body">
+      <span><b>${units} unit${units > 1 ? 's' : ''}</b> whole blood</span>
+      <span class="req-time">Just now</span>
+    </div>
+    <div class="req-progress">
+      <div class="bar"><i style="width:${pct}%;"></i></div>
+      <span class="enroute-label">${enroute}/${needed} donors en route</span>
+    </div>
+    <button class="accept-btn${full ? ' done' : ''}" ${full ? 'disabled' : ''}>
+      ${full ? 'Request Fulfilled' : 'Accept &amp; Navigate<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>'}
+    </button>
+  `;
+
+  if (typeof applyCompatibilityToCard === 'function') {
+    applyCompatibilityToCard(card);
+  }
+
+  return card;
+}
+
+function prependLiveRequisitionCard(r, showToast = false) {
+  const grid = document.getElementById('requestGrid');
+  if (!grid) return;
+
+  const reqCode = r.request_code || r.id;
+  // Prevent duplicate cards
+  if (reqCode && grid.querySelector(`[data-req-code="${reqCode}"]`)) {
+    return;
+  }
+
+  const card = createRequisitionCardElement(r);
+  grid.prepend(card);
+
+  // Maintain grid max 6 items
+  while (grid.children.length > 7) {
+    grid.removeChild(grid.lastChild);
+  }
+
+  if (showToast) {
+    const hosp = r.hospital_name || r.hospital || 'Hospital';
+    const bg = r.blood_group || r.bloodGroup || 'Blood';
+    const urg = (r.urgency || 'Critical').toUpperCase();
+    showCompatAlert(
+      `🚨 New Live Requisition Broadcast`,
+      `<b>${bg} (${urg})</b> broadcasted by <b>${hosp}</b>! Emergency feed updated.`
+    );
+  }
+}
+
+async function syncLiveRequisitionsWithSupabase(showNewAlert = false) {
+  const grid = document.getElementById('requestGrid');
+  if (!grid) return;
+
+  try {
+    const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+    let list = [];
+
+    // 1. Fetch from Supabase public.blood_requests
+    if (sb) {
+      const { data, error } = await sb
+        .from('blood_requests')
+        .select('*')
+        .eq('status', 'open')
+        .order('created_at', { ascending: false });
+
+      if (data && data.length > 0) {
+        list = data;
+      }
+    }
+
+    // 2. Merge with any local requisitions in localStorage
+    try {
+      const rawLocal = localStorage.getItem('veintovein_requisitions');
+      const localReqs = rawLocal ? JSON.parse(rawLocal) : [];
+      localReqs.forEach(lr => {
+        if (lr.status !== 'Fulfilled' && !list.find(item => item.request_code === lr.id || item.id === lr.id)) {
+          list.push(lr);
+        }
+      });
+    } catch (e) {}
+
+    if (list.length > 0) {
+      // Prepend newest requisitions
+      list.slice().reverse().forEach(req => {
+        prependLiveRequisitionCard(req, false);
+      });
+    }
+  } catch (err) {
+    console.warn('[VeinToVein] Failed to sync live requisitions from Supabase:', err);
+  }
+}
+
+function setupLiveRequisitionListeners() {
+  // 1. Instant cross-tab sync via BroadcastChannel
+  try {
+    const bc = new BroadcastChannel('veintovein_channel');
+    bc.onmessage = (msg) => {
+      if (msg.data && msg.data.type === 'NEW_BROADCAST') {
+        console.log('[VeinToVein] Realtime broadcast received from Admin tab:', msg.data.requisition);
+        prependLiveRequisitionCard(msg.data.requisition, true);
+      } else if (msg.data && msg.data.type === 'FULFILL_REQUISITION') {
+        const grid = document.getElementById('requestGrid');
+        const card = grid?.querySelector(`[data-req-code="${msg.data.id}"]`);
+        if (card) {
+          const btn = card.querySelector('.accept-btn');
+          if (btn) {
+            btn.classList.add('done');
+            btn.disabled = true;
+            btn.textContent = 'Request Fulfilled';
+          }
+        }
+      }
+    };
+  } catch (e) {}
+
+  // 2. Supabase Realtime channel subscription for multi-device sync
+  const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+  if (sb) {
+    try {
+      sb.channel('feed:realtime-blood-requests')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'blood_requests' }, (payload) => {
+          console.log('[VeinToVein] Live blood_requests INSERT from network:', payload.new);
+          if (payload.new && payload.new.status === 'open') {
+            prependLiveRequisitionCard(payload.new, true);
+          }
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'blood_requests' }, (payload) => {
+          if (payload.new) {
+            const grid = document.getElementById('requestGrid');
+            const card = grid?.querySelector(`[data-req-code="${payload.new.request_code}"]`) || grid?.querySelector(`[data-req-db-id="${payload.new.id}"]`);
+            if (card) {
+              card.dataset.enroute = payload.new.donors_enroute;
+              const needed = +card.dataset.needed || (payload.new.units_needed + 1);
+              const pct = Math.min(100, Math.round((payload.new.donors_enroute / needed) * 100));
+              const bar = card.querySelector('.req-progress .bar i');
+              if (bar) bar.style.width = pct + '%';
+              const lbl = card.querySelector('.enroute-label');
+              if (lbl) lbl.textContent = `${payload.new.donors_enroute}/${needed} donors en route`;
+              if (payload.new.status === 'fulfilled') {
+                const btn = card.querySelector('.accept-btn');
+                if (btn) {
+                  btn.classList.add('done');
+                  btn.disabled = true;
+                  btn.textContent = 'Request Fulfilled';
+                }
+              }
+            }
+          }
+        })
+        .subscribe();
+    } catch (e) {}
+  }
+
+  // 3. Fallback polling every 6 seconds to ensure freshly broadcasted requests appear
+  setInterval(() => {
+    syncLiveRequisitionsWithSupabase(false);
+  }, 6000);
+}
 
 
 

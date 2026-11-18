@@ -637,12 +637,31 @@ function renderRequisitions() {
   }).join('');
 }
 
-window.fulfillRequisition = function (id) {
+window.fulfillRequisition = async function (id) {
   const reqs = getRequisitions();
   const target = reqs.find(r => r.id === id);
   if (target) {
     target.status = 'Fulfilled';
     saveRequisitions(reqs);
+
+    // 1. Update in Supabase public.blood_requests
+    try {
+      const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+      if (sb) {
+        await sb.from('blood_requests')
+          .update({ status: 'fulfilled' })
+          .or(`request_code.eq.${id},id.eq.${target.dbId || id}`);
+      }
+    } catch (err) {
+      console.warn('[VeinToVein] Supabase fulfill update error:', err);
+    }
+
+    // 2. Broadcast via BroadcastChannel across all open tabs
+    try {
+      const bc = new BroadcastChannel('veintovein_channel');
+      bc.postMessage({ type: 'FULFILL_REQUISITION', id: id });
+    } catch (bcErr) {}
+
     adminToast('Requisition Closed', `Requisition ${id} marked fulfilled and archived.`, 'info');
     updateKPIs();
     renderRequisitions();
@@ -652,41 +671,88 @@ window.fulfillRequisition = function (id) {
 // ────────────────────────────────────────────────────────────
 // BROADCAST NEW REQUISITION MODAL SUBMIT
 // ────────────────────────────────────────────────────────────
-document.getElementById('broadcastReqForm')?.addEventListener('submit', (e) => {
+document.getElementById('broadcastReqForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  const hospital = document.getElementById('modalHospitalSelect').value;
+  const hospitalRaw = document.getElementById('modalHospitalSelect').value;
   const bloodGroup = document.getElementById('modalBloodGroup').value;
   const urgency = document.getElementById('modalUrgency').value;
   const units = parseInt(document.getElementById('modalUnits').value, 10) || 2;
   const ward = document.getElementById('modalWard').value || 'Emergency ICU';
   const notes = document.getElementById('modalNotes').value || '';
 
+  // Parse hospital name & ward/location
+  let hospName = hospitalRaw;
+  let hospArea = ward;
+  if (hospitalRaw.includes('·')) {
+    const parts = hospitalRaw.split('·');
+    hospName = parts[0].trim();
+    hospArea = parts[1].trim() + (ward ? ` · ${ward}` : '');
+  } else if (hospitalRaw.includes('—')) {
+    const parts = hospitalRaw.split('—');
+    hospName = parts[0].trim();
+    hospArea = parts[1].trim() + (ward ? ` · ${ward}` : '');
+  }
+
   const newId = `REQ-${Math.floor(100 + Math.random() * 900)}`;
 
   const newReq = {
     id: newId,
-    hospital: hospital,
+    hospital: hospName,
     bloodGroup: bloodGroup,
     urgency: urgency,
     units: units,
-    ward: ward,
+    ward: hospArea,
     notes: notes,
     status: 'Seeking Donors',
     created: new Date().toISOString()
   };
 
+  // 1. Save to local storage cache immediately
   const reqs = getRequisitions();
   reqs.unshift(newReq);
   saveRequisitions(reqs);
 
-  // Broadcast to Live Requests in Homepage if open
+  // 2. Broadcast immediately over BroadcastChannel & CustomEvent for local tabs
+  try {
+    const bc = new BroadcastChannel('veintovein_channel');
+    bc.postMessage({ type: 'NEW_BROADCAST', requisition: newReq });
+  } catch (bcErr) {}
   window.dispatchEvent(new CustomEvent('veintovein_new_requisition', { detail: newReq }));
+
+  // 3. Publish to Supabase public.blood_requests live network table
+  try {
+    const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+    if (sb) {
+      const { data, error } = await sb.from('blood_requests').insert({
+        request_code: newId,
+        hospital_name: hospName,
+        area: hospArea,
+        blood_group: bloodGroup,
+        units_needed: units,
+        urgency: urgency.toLowerCase(), // Postgres check constraint: 'critical', 'urgent', 'stable'
+        donors_needed: units + 1,
+        donors_enroute: 0,
+        status: 'open',
+        distance_km: parseFloat((Math.random() * 3 + 1.2).toFixed(1))
+      }).select();
+
+      if (error) {
+        console.error('[VeinToVein] Supabase requisition insert error:', error);
+      } else if (data && data[0]) {
+        console.log('[VeinToVein] Requisition successfully published to Supabase live network:', data[0]);
+        newReq.dbId = data[0].id;
+        saveRequisitions(reqs);
+      }
+    }
+  } catch (err) {
+    console.error('[VeinToVein] Error writing broadcast to Supabase:', err);
+  }
 
   document.getElementById('broadcastModal').classList.remove('open');
   adminToast(
     'Requisition Broadcast Dispatched!',
-    `Emergency alert for <b>${bloodGroup} (${urgency})</b> at <b>${hospital}</b> broadcasted across the network!`,
+    `Emergency alert for <b>${bloodGroup} (${urgency})</b> at <b>${hospName}</b> broadcasted across the live network!`,
     'success'
   );
 
@@ -1142,4 +1208,148 @@ document.addEventListener('DOMContentLoaded', () => {
   renderInventory();
   renderRequisitions();
   loadAndRenderDonorRegistry();
+
+  // Sync Live Requisitions & Inbound Dispatches from Supabase
+  syncRequisitionsFromSupabase();
+  syncInboundArrivalsFromSupabase();
+  setupAdminLiveSync();
+});
+
+// ────────────────────────────────────────────────────────────
+// SYNC LIVE REQUISITIONS & INBOUND DISPATCHES FROM SUPABASE
+// ────────────────────────────────────────────────────────────
+async function syncRequisitionsFromSupabase() {
+  try {
+    const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+    if (!sb) return;
+    const { data, error } = await sb
+      .from('blood_requests')
+      .select('*')
+      .eq('status', 'open')
+      .order('created_at', { ascending: false });
+
+    if (data && data.length > 0) {
+      const mapped = data.map(r => ({
+        id: r.request_code || r.id,
+        dbId: r.id,
+        hospital: r.hospital_name,
+        bloodGroup: r.blood_group,
+        urgency: r.urgency ? (r.urgency.charAt(0).toUpperCase() + r.urgency.slice(1).toLowerCase()) : 'Critical',
+        units: r.units_needed || 1,
+        ward: r.area || 'General Ward',
+        notes: '',
+        status: r.status === 'open' ? 'Seeking Donors' : 'Fulfilled',
+        created: r.created_at
+      }));
+
+      // Merge with any offline / local items
+      const local = getRequisitions();
+      local.forEach(l => {
+        if (!mapped.find(m => m.id === l.id)) {
+          mapped.push(l);
+        }
+      });
+
+      saveRequisitions(mapped);
+      renderRequisitions();
+      updateKPIs();
+    }
+  } catch (err) {
+    console.warn('[VeinToVein] Requisition sync error:', err);
+  }
+}
+
+async function syncInboundArrivalsFromSupabase() {
+  try {
+    const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+    if (!sb) return;
+    const { data, error } = await sb
+      .from('donations')
+      .select('*, profiles(*)')
+      .in('status', ['En Route', 'At Desk'])
+      .order('created_at', { ascending: false });
+
+    if (data && data.length > 0) {
+      const dispatches = getDispatches();
+      let hasNew = false;
+      data.forEach(item => {
+        const ticketId = `VT-ARR-${item.id.slice(0, 5).toUpperCase()}`;
+        const match = dispatches.find(d => d.ticketId === ticketId || (d.donorId && item.profiles && d.donorId === item.profiles.donor_id));
+        if (!match) {
+          dispatches.unshift({
+            ticketId: ticketId,
+            donorId: item.profiles ? item.profiles.donor_id : 'VT-IN-2026',
+            donorName: item.profiles ? item.profiles.full_name : 'Verified Donor',
+            bloodGroup: item.profiles ? item.profiles.blood_group : 'O+',
+            phone: item.profiles ? item.profiles.phone : '',
+            email: item.profiles ? item.profiles.email : '',
+            hospitalName: item.centre || 'Apollo Hospitals · Seshadripuram',
+            hospitalLocation: 'Bengaluru',
+            urgency: 'Critical',
+            neededType: item.profiles ? item.profiles.blood_group : 'O+',
+            status: item.status === 'At Desk' ? 'arrived' : 'en_route',
+            eta: '20 mins',
+            acceptedAt: item.created_at
+          });
+          hasNew = true;
+        }
+      });
+      if (hasNew) {
+        saveDispatches(dispatches);
+        renderArrivalsTable();
+        updateKPIs();
+      }
+    }
+  } catch (e) {
+    console.warn('[VeinToVein] Inbound arrivals sync error:', e);
+  }
+}
+
+function setupAdminLiveSync() {
+  // 1. BroadcastChannel across local tabs
+  try {
+    const bc = new BroadcastChannel('veintovein_channel');
+    bc.onmessage = (msg) => {
+      if (msg.data && msg.data.type === 'DONOR_DISPATCH') {
+        const dispatches = getDispatches();
+        const exists = dispatches.find(d => d.ticketId === msg.data.dispatch.ticketId);
+        if (!exists) {
+          dispatches.unshift(msg.data.dispatch);
+          saveDispatches(dispatches);
+          renderArrivalsTable();
+          updateKPIs();
+          adminToast(
+            '⚡ Inbound Donor Registered',
+            `<b>${msg.data.dispatch.donorName} (${msg.data.dispatch.bloodGroup})</b> has accepted emergency requisition and is en route to ${msg.data.dispatch.hospitalName}!`,
+            'info'
+          );
+        }
+      } else if (msg.data && msg.data.type === 'NEW_BROADCAST') {
+        renderRequisitions();
+        updateKPIs();
+      }
+    };
+  } catch (e) {}
+
+  // 2. Supabase Realtime subscriptions
+  const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+  if (sb) {
+    try {
+      sb.channel('admin:realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'blood_requests' }, () => {
+          syncRequisitionsFromSupabase();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'donations' }, () => {
+          syncInboundArrivalsFromSupabase();
+        })
+        .subscribe();
+    } catch (e) {}
+  }
+
+  // 3. Fallback polling every 7 seconds
+  setInterval(() => {
+    syncRequisitionsFromSupabase();
+    syncInboundArrivalsFromSupabase();
+  }, 7000);
+}
 });
